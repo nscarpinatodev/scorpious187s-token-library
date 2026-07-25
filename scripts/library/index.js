@@ -10,7 +10,7 @@
 import { HOOK_CHANGED, HOOK_READY, DIRS } from '../constants.js';
 import { loadSources, saveOverlay, defaultManifest } from '../storage/manifest.js';
 import { browse, browseImages } from '../storage/files.js';
-import { source, join, basename, slugify, root as libraryRoot } from '../storage/paths.js';
+import { source, join, basename, slugify, decodePath, root as libraryRoot } from '../storage/paths.js';
 import { inferFacets } from './infer.js';
 import { log } from '../logger.js';
 
@@ -173,7 +173,7 @@ export async function build({ scan = true } = {}) {
   for (const src of sources) {
     for (const c of src.manifest.categories) {
       for (const image of c.images) {
-        if (image.removed) removed.add(image.external ? image.file : join(src.root, image.file));
+        if (image.removed) removed.add(resolveImagePath(src.root, image));
       }
     }
   }
@@ -201,7 +201,7 @@ export async function build({ scan = true } = {}) {
       if (!src.readOnly) existing.readOnly = false;
 
       for (const image of c.images) {
-        const path = image.external ? image.file : join(src.root, image.file);
+        const path = resolveImagePath(src.root, image);
         if (removed.has(path)) {
           if (!existing.removed.includes(path)) existing.removed.push(path);
           continue;
@@ -294,6 +294,18 @@ async function scanArtDirectories(sources, removed = new Set()) {
       }
     }
   }
+}
+
+/**
+ * Full path for a manifest image entry, in the module's canonical decoded form.
+ *
+ * Manifest entries written before paths were normalised can hold encoded names
+ * ("Seralyne%203.jpg"), and decoding only browse() results left those alone —
+ * so a scanned file and its manifest entry looked like two different images.
+ */
+function resolveImagePath(sourceRoot, image) {
+  const file = decodePath(image.file);
+  return image.external ? file : join(sourceRoot, file);
 }
 
 function titleCase(value) {

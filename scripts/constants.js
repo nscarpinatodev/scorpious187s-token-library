@@ -72,7 +72,7 @@ export const SUBJECT_THICKNESS = 0.6666666;
  * id. Output from an older version lands in a different directory rather than
  * being silently reused, so a fix actually reaches existing libraries.
  */
-export const COMPOSITE_VERSION = 2;
+export const COMPOSITE_VERSION = 3;
 
 /** Actor/token flags on this module's namespace. */
 export const FLAGS = Object.freeze({

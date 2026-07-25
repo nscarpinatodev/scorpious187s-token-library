@@ -131,6 +131,39 @@ export function extension(path) {
   return dot === -1 ? '' : name.slice(dot + 1).toLowerCase();
 }
 
+/**
+ * Deterministic, filesystem-safe name for a processed variant.
+ *
+ * Foundry's upload endpoint percent-encodes spaces in the filename it stores,
+ * so asking it to write "Seralyne 3.webp" produces "Seralyne%203.webp" on disk.
+ * Nothing then agrees: texture.src cannot resolve, and the existence check
+ * never finds the file it just wrote, so every token drop re-processed the same
+ * image.
+ *
+ * Rather than keep guessing at that behaviour, generated names avoid every
+ * character it touches. These files are derived artefacts, so the name only has
+ * to be stable and unique — a slug of the source name keeps it readable, and a
+ * hash of the full source path keeps "a b.png" and "a-b.png" apart.
+ *
+ * @param {string} sourcePath Full path of the source artwork.
+ * @param {string} ext        Output extension, without the dot.
+ */
+export function variantFilename(sourcePath, ext) {
+  const stem = basename(decodePath(sourcePath)).replace(/\.\w+$/, '');
+  const slug = slugify(stem).slice(0, 60) || 'image';
+  return `${slug}-${hash36(decodePath(sourcePath))}.${ext}`;
+}
+
+/** FNV-1a, base36. Short, stable, and good enough to separate filenames. */
+function hash36(value) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
 /** Replace a path's extension (`swapExtension('a/b.png', 'webp')`). */
 export function swapExtension(path, ext) {
   return `${trimSlashes(path).replace(/\.\w+$/, '')}.${ext}`;

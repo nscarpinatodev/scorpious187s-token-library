@@ -20,7 +20,7 @@
 import { SETTINGS, RING_MODES, MASK_MODES, COMPOSITE_VERSION } from '../constants.js';
 import { get } from '../settings.js';
 import {
-  bakedDir, frameIdFor, join, swapExtension, source, slugify, basename, decodePath,
+  bakedDir, frameIdFor, join, source, slugify, basename, decodePath, variantFilename,
 } from '../storage/paths.js';
 import { browse, uploadBlob } from '../storage/files.js';
 import { composite } from './compositor.js';
@@ -29,9 +29,20 @@ import { log } from '../logger.js';
 /** Directory listings keyed by variant directory, so we browse once per run. */
 const listingCache = new Map();
 
-/** Drop cached listings — call after processing, or when the variant changes. */
+/** Drop cached listings — call when the frame, mask, mode or format changes. */
 export function invalidateCache() {
   listingCache.clear();
+}
+
+/**
+ * Record a file we just wrote, so the next existence check sees it without a
+ * round trip. Wiping the whole cache after a run instead meant every subsequent
+ * token drop re-browsed — and, while names were being mangled, re-processed the
+ * same image over and over.
+ */
+function noteWritten(target) {
+  const dir = target.slice(0, target.lastIndexOf('/'));
+  listingCache.get(dir)?.add(target);
 }
 
 /**
@@ -114,7 +125,7 @@ export function needsProcessing() {
 export function variantPathFor(image, variant = currentVariant()) {
   if (!variant) return null;
   const format = get(SETTINGS.EXPORT_FORMAT) || 'webp';
-  return join(bakedDir(variant.id, image.categoryId), swapExtension(image.filename, format));
+  return join(bakedDir(variant.id, image.categoryId), variantFilename(image.path, format));
 }
 
 async function listing(dir) {
@@ -211,8 +222,10 @@ export async function bakeImages(images, { onProgress, shouldStop, force = false
       const dir = target.slice(0, target.lastIndexOf('/'));
       const filename = target.slice(target.lastIndexOf('/') + 1);
       const stored = await uploadBlob(source(), dir, filename, blob);
-      if (stored) baked.push(stored);
-      else failed.push({ image, error: 'upload rejected' });
+      if (stored) {
+        baked.push(stored);
+        noteWritten(target);
+      } else failed.push({ image, error: 'upload rejected' });
     } catch (err) {
       failed.push({ image, error: String(err?.message ?? err) });
       log.warn(`processing failed for ${image.path}:`, err?.message ?? err);
@@ -220,7 +233,6 @@ export async function bakeImages(images, { onProgress, shouldStop, force = false
     onProgress?.(i + 1, targets.length, image);
   }
 
-  invalidateCache();
   log.log(`processing complete: ${baked.length} written, ${skipped} already present, ${failed.length} failed`);
   return { baked, skipped, failed };
 }
