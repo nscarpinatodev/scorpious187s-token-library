@@ -8,7 +8,25 @@
         "human",
         "tiefling",
         "dragonborn",
-        "elven"
+        "elven",
+        "elf",
+        "half-elf",
+        "dwarf",
+        "halfling",
+        "gnome",
+        "half-orc",
+        "orc",
+        "goblin",
+        "kobold",
+        "lizardfolk",
+        "catfolk",
+        "aasimar",
+        "genasi",
+        "goliath",
+        "firbolg",
+        "tabaxi",
+        "kenku",
+        "leshy"
       ]
     },
     {
@@ -16,7 +34,65 @@
       "label": "Gender",
       "values": [
         "female",
-        "male"
+        "male",
+        "androgynous"
+      ]
+    },
+    {
+      "id": "age",
+      "label": "Age",
+      "values": [
+        "child",
+        "young",
+        "adult",
+        "middle-aged",
+        "elderly"
+      ]
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "values": [
+        "slight",
+        "average",
+        "stocky",
+        "muscular",
+        "heavy"
+      ]
+    },
+    {
+      "id": "environment",
+      "label": "Environment",
+      "values": [
+        "urban",
+        "rural",
+        "wilderness",
+        "coastal",
+        "underground",
+        "desert",
+        "arctic"
+      ]
+    },
+    {
+      "id": "armour",
+      "label": "Armour",
+      "values": [
+        "unarmoured",
+        "light",
+        "medium",
+        "heavy",
+        "robes"
+      ]
+    },
+    {
+      "id": "mood",
+      "label": "Mood",
+      "values": [
+        "friendly",
+        "neutral",
+        "hostile",
+        "wary",
+        "wounded"
       ]
     }
   ],
@@ -34,8 +110,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "human",
-            "gender": "male"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "male"
+            ]
           }
         },
         {
@@ -43,8 +123,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -52,8 +136,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "elf",
-            "gender": "female"
+            "race": [
+              "elf"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -61,8 +149,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "elf",
-            "gender": "male"
+            "race": [
+              "elf"
+            ],
+            "gender": [
+              "male"
+            ]
           }
         },
         {
@@ -70,8 +162,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "tiefling",
-            "gender": "female"
+            "race": [
+              "tiefling"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -79,8 +175,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "tiefling",
-            "gender": "male"
+            "race": [
+              "tiefling"
+            ],
+            "gender": [
+              "male"
+            ]
           }
         }
       ]
@@ -92,7 +192,9 @@
         "names": [
           "commoner",
           "peasant",
-          "villager"
+          "villager",
+          "citizen",
+          "townsfolk"
         ],
         "creatureTypes": [
           "humanoid"
@@ -104,8 +206,12 @@
           "external": false,
           "removed": true,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -113,8 +219,12 @@
           "external": false,
           "removed": true,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -122,8 +232,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "elven"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -131,8 +245,12 @@
           "external": false,
           "removed": true,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -140,8 +258,12 @@
           "external": false,
           "removed": true,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -149,8 +271,12 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "elven"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
@@ -158,23 +284,1003 @@
           "external": false,
           "removed": false,
           "facets": {
-            "race": "human",
-            "gender": "female"
+            "race": [
+              "human"
+            ],
+            "gender": [
+              "female"
+            ]
           }
         },
         {
           "file": "art/commoner/openart-02177874137686432716c93dca5f9defc0d360fd0d690bd8fbe6b_0_1778741436706_ff4dd6f0.png",
           "external": false,
           "removed": false,
-          "facets": {}
+          "facets": {
+            "race": [
+              "elven"
+            ],
+            "gender": [
+              "female"
+            ]
+          }
         },
         {
           "file": "art/commoner/Seralyne%20Elven%20Ears.jpg",
           "external": false,
           "removed": false,
           "facets": {}
+        },
+        {
+          "file": "art/commoner/Seralyne 3.jpg",
+          "external": false,
+          "removed": false,
+          "facets": {
+            "race": [
+              "elven"
+            ],
+            "gender": [
+              "female"
+            ]
+          }
+        },
+        {
+          "file": "art/commoner/Seralyne Elven Ears.jpg",
+          "external": false,
+          "removed": false,
+          "facets": {
+            "race": [
+              "elven"
+            ],
+            "gender": [
+              "female"
+            ]
+          }
         }
       ]
+    },
+    {
+      "id": "noble",
+      "label": "Noble",
+      "match": {
+        "names": [
+          "noble",
+          "aristocrat",
+          "lord",
+          "lady",
+          "baron",
+          "baroness",
+          "courtier"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "merchant",
+      "label": "Merchant",
+      "match": {
+        "names": [
+          "merchant",
+          "trader",
+          "shopkeeper",
+          "vendor",
+          "peddler"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "innkeeper",
+      "label": "Innkeeper",
+      "match": {
+        "names": [
+          "innkeeper",
+          "barkeep",
+          "bartender",
+          "tavernkeeper",
+          "publican"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "farmer",
+      "label": "Farmer",
+      "match": {
+        "names": [
+          "farmer",
+          "farmhand",
+          "shepherd",
+          "herder"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "labourer",
+      "label": "Labourer",
+      "match": {
+        "names": [
+          "labourer",
+          "laborer",
+          "miner",
+          "dockworker",
+          "porter",
+          "stevedore"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "artisan",
+      "label": "Artisan",
+      "match": {
+        "names": [
+          "artisan",
+          "craftsman",
+          "blacksmith",
+          "smith",
+          "carpenter",
+          "mason",
+          "tailor",
+          "cobbler"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "servant",
+      "label": "Servant",
+      "match": {
+        "names": [
+          "servant",
+          "maid",
+          "butler",
+          "valet",
+          "steward",
+          "attendant"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "beggar",
+      "label": "Beggar",
+      "match": {
+        "names": [
+          "beggar",
+          "vagrant",
+          "urchin",
+          "street urchin"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "child",
+      "label": "Child",
+      "match": {
+        "names": [
+          "child",
+          "kid",
+          "youth",
+          "boy",
+          "girl"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "sailor",
+      "label": "Sailor",
+      "match": {
+        "names": [
+          "sailor",
+          "deckhand",
+          "mariner",
+          "fisherman",
+          "fisher"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "entertainer",
+      "label": "Entertainer",
+      "match": {
+        "names": [
+          "entertainer",
+          "minstrel",
+          "performer",
+          "jester",
+          "dancer",
+          "acrobat"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "guard",
+      "label": "Guard",
+      "match": {
+        "names": [
+          "guard",
+          "watchman",
+          "sentry",
+          "gate guard",
+          "city watch"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "soldier",
+      "label": "Soldier",
+      "match": {
+        "names": [
+          "soldier",
+          "warrior",
+          "infantry",
+          "legionnaire",
+          "man-at-arms"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "veteran",
+      "label": "Veteran",
+      "match": {
+        "names": [
+          "veteran",
+          "champion",
+          "gladiator"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "knight",
+      "label": "Knight",
+      "match": {
+        "names": [
+          "knight",
+          "cavalier",
+          "paladin",
+          "crusader"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "captain",
+      "label": "Captain",
+      "match": {
+        "names": [
+          "captain",
+          "commander",
+          "sergeant",
+          "lieutenant",
+          "warlord"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "archer",
+      "label": "Archer",
+      "match": {
+        "names": [
+          "archer",
+          "bowman",
+          "crossbowman",
+          "marksman",
+          "sniper"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "scout",
+      "label": "Scout",
+      "match": {
+        "names": [
+          "scout",
+          "ranger",
+          "tracker",
+          "outrider",
+          "pathfinder"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "mercenary",
+      "label": "Mercenary",
+      "match": {
+        "names": [
+          "mercenary",
+          "sellsword",
+          "hireling",
+          "freebooter"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "berserker",
+      "label": "Berserker",
+      "match": {
+        "names": [
+          "berserker",
+          "barbarian",
+          "raider",
+          "reaver"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "bandit",
+      "label": "Bandit",
+      "match": {
+        "names": [
+          "bandit",
+          "brigand",
+          "highwayman",
+          "outlaw",
+          "marauder"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "thug",
+      "label": "Thug",
+      "match": {
+        "names": [
+          "thug",
+          "ruffian",
+          "enforcer",
+          "bruiser",
+          "tough"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "thief",
+      "label": "Thief",
+      "match": {
+        "names": [
+          "thief",
+          "rogue",
+          "burglar",
+          "cutpurse",
+          "pickpocket"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "assassin",
+      "label": "Assassin",
+      "match": {
+        "names": [
+          "assassin",
+          "killer",
+          "murderer"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "spy",
+      "label": "Spy",
+      "match": {
+        "names": [
+          "spy",
+          "informant",
+          "infiltrator",
+          "agent"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "pirate",
+      "label": "Pirate",
+      "match": {
+        "names": [
+          "pirate",
+          "buccaneer",
+          "corsair",
+          "privateer"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "smuggler",
+      "label": "Smuggler",
+      "match": {
+        "names": [
+          "smuggler",
+          "fence",
+          "bootlegger"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "acolyte",
+      "label": "Acolyte",
+      "match": {
+        "names": [
+          "acolyte",
+          "initiate",
+          "novice",
+          "adept"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "priest",
+      "label": "Priest",
+      "match": {
+        "names": [
+          "priest",
+          "priestess",
+          "cleric",
+          "bishop",
+          "hierophant",
+          "oracle"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "monk",
+      "label": "Monk",
+      "match": {
+        "names": [
+          "monk",
+          "ascetic",
+          "friar"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "druid",
+      "label": "Druid",
+      "match": {
+        "names": [
+          "druid",
+          "shaman",
+          "witch doctor"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "mage",
+      "label": "Mage",
+      "match": {
+        "names": [
+          "mage",
+          "wizard",
+          "sorcerer",
+          "sorceress",
+          "archmage",
+          "magus",
+          "evoker",
+          "illusionist",
+          "conjurer",
+          "transmuter",
+          "diviner",
+          "enchanter",
+          "abjurer",
+          "necromancer"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "apprentice",
+      "label": "Apprentice",
+      "match": {
+        "names": [
+          "apprentice",
+          "student",
+          "scribe"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "warlock",
+      "label": "Warlock",
+      "match": {
+        "names": [
+          "warlock",
+          "witch",
+          "hexer"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "bard",
+      "label": "Bard",
+      "match": {
+        "names": [
+          "bard",
+          "skald",
+          "troubadour"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "cultist",
+      "label": "Cultist",
+      "match": {
+        "names": [
+          "cultist",
+          "fanatic",
+          "zealot",
+          "devotee"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "alchemist",
+      "label": "Alchemist",
+      "match": {
+        "names": [
+          "alchemist",
+          "apothecary",
+          "herbalist",
+          "chirurgeon"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "scholar",
+      "label": "Scholar",
+      "match": {
+        "names": [
+          "scholar",
+          "sage",
+          "librarian",
+          "archivist",
+          "loremaster"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "goblin",
+      "label": "Goblin",
+      "match": {
+        "names": [
+          "goblin"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "hobgoblin",
+      "label": "Hobgoblin",
+      "match": {
+        "names": [
+          "hobgoblin"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "bugbear",
+      "label": "Bugbear",
+      "match": {
+        "names": [
+          "bugbear"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "kobold",
+      "label": "Kobold",
+      "match": {
+        "names": [
+          "kobold"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "orc",
+      "label": "Orc",
+      "match": {
+        "names": [
+          "orc",
+          "ork"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "gnoll",
+      "label": "Gnoll",
+      "match": {
+        "names": [
+          "gnoll"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "lizardfolk",
+      "label": "Lizardfolk",
+      "match": {
+        "names": [
+          "lizardfolk",
+          "lizardman",
+          "iruxi"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "drow",
+      "label": "Drow",
+      "match": {
+        "names": [
+          "drow",
+          "dark elf"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "duergar",
+      "label": "Duergar",
+      "match": {
+        "names": [
+          "duergar",
+          "grey dwarf",
+          "gray dwarf"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "ogre",
+      "label": "Ogre",
+      "match": {
+        "names": [
+          "ogre"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "troll",
+      "label": "Troll",
+      "match": {
+        "names": [
+          "troll"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "giant",
+      "label": "Giant",
+      "match": {
+        "names": [
+          "giant",
+          "ettin",
+          "cyclops"
+        ],
+        "creatureTypes": [
+          "giant"
+        ]
+      },
+      "images": []
+    },
+    {
+      "id": "hag",
+      "label": "Hag",
+      "match": {
+        "names": [
+          "hag",
+          "crone"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "satyr",
+      "label": "Satyr",
+      "match": {
+        "names": [
+          "satyr",
+          "faun"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "centaur",
+      "label": "Centaur",
+      "match": {
+        "names": [
+          "centaur"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "minotaur",
+      "label": "Minotaur",
+      "match": {
+        "names": [
+          "minotaur"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "harpy",
+      "label": "Harpy",
+      "match": {
+        "names": [
+          "harpy"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "skeleton",
+      "label": "Skeleton",
+      "match": {
+        "names": [
+          "skeleton"
+        ],
+        "creatureTypes": [
+          "undead"
+        ]
+      },
+      "images": []
+    },
+    {
+      "id": "zombie",
+      "label": "Zombie",
+      "match": {
+        "names": [
+          "zombie"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "ghoul",
+      "label": "Ghoul",
+      "match": {
+        "names": [
+          "ghoul",
+          "ghast"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "ghost",
+      "label": "Ghost",
+      "match": {
+        "names": [
+          "ghost",
+          "spectre",
+          "specter",
+          "wraith",
+          "shade",
+          "phantom"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "vampire",
+      "label": "Vampire",
+      "match": {
+        "names": [
+          "vampire",
+          "vampire spawn",
+          "dhampir"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "mummy",
+      "label": "Mummy",
+      "match": {
+        "names": [
+          "mummy"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "lich",
+      "label": "Lich",
+      "match": {
+        "names": [
+          "lich"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "demon",
+      "label": "Demon",
+      "match": {
+        "names": [
+          "demon",
+          "fiend",
+          "balor",
+          "succubus",
+          "incubus"
+        ],
+        "creatureTypes": [
+          "fiend"
+        ]
+      },
+      "images": []
+    },
+    {
+      "id": "devil",
+      "label": "Devil",
+      "match": {
+        "names": [
+          "devil",
+          "imp",
+          "erinyes",
+          "pit fiend"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "angel",
+      "label": "Angel",
+      "match": {
+        "names": [
+          "angel",
+          "deva",
+          "planetar",
+          "solar",
+          "archon"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
+    },
+    {
+      "id": "elemental",
+      "label": "Elemental",
+      "match": {
+        "names": [
+          "elemental",
+          "genie",
+          "djinni",
+          "efreeti"
+        ],
+        "creatureTypes": [
+          "elemental"
+        ]
+      },
+      "images": []
+    },
+    {
+      "id": "fey",
+      "label": "Fey",
+      "match": {
+        "names": [
+          "fey",
+          "sprite",
+          "pixie",
+          "dryad",
+          "nymph"
+        ],
+        "creatureTypes": [
+          "fey"
+        ]
+      },
+      "images": []
+    },
+    {
+      "id": "lycanthrope",
+      "label": "Lycanthrope",
+      "match": {
+        "names": [
+          "werewolf",
+          "wererat",
+          "werebear",
+          "weretiger",
+          "wereboar",
+          "lycanthrope"
+        ],
+        "creatureTypes": []
+      },
+      "images": []
     }
   ]
 }

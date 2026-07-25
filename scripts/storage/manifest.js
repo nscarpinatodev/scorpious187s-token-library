@@ -16,7 +16,7 @@ import {
   MANIFEST_FILE, MANIFEST_VERSION, MODULE_ID,
   ART_PACK_FLAG, ART_PACK_MANIFEST_FLAG,
 } from '../constants.js';
-import { root, source, manifestPath, join, slugify } from './paths.js';
+import { root, source, manifestPath, join, slugify, decodePath } from './paths.js';
 import { readJson, uploadJson } from './files.js';
 import { log } from '../logger.js';
 
@@ -61,25 +61,48 @@ export function normalize(raw) {
         creatureTypes: (Array.isArray(category.match?.creatureTypes) ? category.match.creatureTypes : [])
           .map(String).filter(Boolean),
       },
-      images: (Array.isArray(category.images) ? category.images : [])
-        .filter(image => image?.file)
-        .map(image => ({
-          file: String(image.file),
-          // `external` marks a path that is already absolute within its file
-          // source — art the GM linked from elsewhere in the data directory
-          // rather than storing under the library root.
-          external: image.external === true,
-          // `removed` suppresses an image without touching the file. Foundry
-          // exposes no delete API (file-picker.mjs offers only browse,
-          // createDirectory and upload), and the directory scan would re-add
-          // anything still on disk, so removal has to be recorded here.
-          removed: image.removed === true,
-          facets: normalizeImageFacets(image.facets),
-        })),
+      images: normalizeImages(category.images),
     });
   }
 
   return manifest;
+}
+
+/**
+ * A category's image entries, keyed canonically by decoded path.
+ *
+ * Entries used to be stored however the path happened to arrive, so the same
+ * file could appear twice — once as "Seralyne%20Elven%20Ears.jpg" and once as
+ * "Seralyne Elven Ears.jpg". Both resolve to one image at build time, the first
+ * won, and edits written to the second silently vanished: tags looked like they
+ * would not save.
+ *
+ * Paths are therefore decoded here, and duplicates collapse with **later
+ * entries winning** — the file is an ordered log and edits are appended, so the
+ * last write is the current one. A manifest carrying old duplicates heals
+ * itself: they merge on load and are written back as a single entry.
+ */
+function normalizeImages(images) {
+  const byFile = new Map();
+
+  for (const image of Array.isArray(images) ? images : []) {
+    if (!image?.file) continue;
+    byFile.set(decodePath(String(image.file)), {
+      file: decodePath(String(image.file)),
+      // `external` marks a path that is already absolute within its file
+      // source — art the GM linked from elsewhere in the data directory
+      // rather than storing under the library root.
+      external: image.external === true,
+      // `removed` suppresses an image without touching the file. Foundry
+      // exposes no delete API (file-picker.mjs offers only browse,
+      // createDirectory and upload), and the directory scan would re-add
+      // anything still on disk, so removal has to be recorded here.
+      removed: image.removed === true,
+      facets: normalizeImageFacets(image.facets),
+    });
+  }
+
+  return [...byFile.values()];
 }
 
 /**
