@@ -221,10 +221,11 @@
   position: relative;
   display: block;
   width: 100%;
+  min-width: 0;
   height: auto;
   min-height: 0;
   aspect-ratio: 1;
-  padding: 3px;
+  padding: 0;
   border: 2px solid transparent;
   border-radius: var(--stl-radius);
   background: var(--stl-bg-item);
@@ -239,9 +240,19 @@
   box-shadow: 0 0 8px rgba(201, 162, 39, 0.5);
 }
 
+/*
+ * Absolutely positioned on purpose. A percentage height inside a box whose own
+ * height comes from aspect-ratio is a cyclic dependency: the browser resolves
+ * the button from the image's intrinsic height instead, and tall portraits then
+ * overrun into the next grid row. Taking the image out of flow breaks the cycle,
+ * so the button's height is always exactly its width.
+ */
 .stl-thumb img {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  max-width: none;
   object-fit: contain;
   border: none;
   display: block;

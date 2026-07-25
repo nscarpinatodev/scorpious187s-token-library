@@ -139,6 +139,14 @@
             "race": "human",
             "gender": "female"
           }
+        },
+        {
+          "file": "art/commoner/Seralyne%203.jpg",
+          "external": false,
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         }
       ]
     }

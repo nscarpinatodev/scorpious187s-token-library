@@ -69,6 +69,11 @@ export function normalize(raw) {
           // source — art the GM linked from elsewhere in the data directory
           // rather than storing under the library root.
           external: image.external === true,
+          // `removed` suppresses an image without touching the file. Foundry
+          // exposes no delete API (file-picker.mjs offers only browse,
+          // createDirectory and upload), and the directory scan would re-add
+          // anything still on disk, so removal has to be recorded here.
+          removed: image.removed === true,
           facets: (image.facets && typeof image.facets === 'object') ? { ...image.facets } : {},
         })),
     });

@@ -130,6 +130,14 @@ without copying them.
 Unrecognised words in the filenames are offered as new trait values — that is
 how the race list grows without opening JSON.
 
+## Removing art
+
+Select thumbnails and hit **Remove**. Foundry gives modules no way to delete
+files, so the image files stay in your data folder — they are simply no longer
+part of the library, and the folder scan will not pick them up again. **Restore
+Removed** brings a category's removed images back; deleting the files for real
+is a job for your file manager.
+
 ## Storage and moving the library
 
 The default location is the module's own persistent storage, which Foundry

@@ -124,6 +124,13 @@
   "STL.Import.NothingQueued": "No images queued.",
   "STL.Import.NoTokenizer": "Tokenizer 2 is not available. Images will be added as-is; frame compositing is unavailable.",
 
+  "STL.Remove.Action": "Remove",
+  "STL.Remove.Title": "Remove From Library",
+  "STL.Remove.Message": "<p>Remove <strong>{count}</strong> image(s) from the library?</p><p>Foundry does not let modules delete files, so the image files stay on disk — they are simply no longer part of the library, and the folder scan will not pick them up again. You can restore them from this category later, or delete the files yourself in your data folder.</p>",
+  "STL.Remove.Done": "Removed {count} image(s) from the library.",
+  "STL.Remove.Restore": "Restore Removed",
+  "STL.Remove.RestoreHint": "Bring back every image previously removed from this category.",
+
   "STL.Tag.Assign": "Assign traits",
   "STL.Tag.Keep": "— keep —",
   "STL.Tag.Clear": "— clear —",

@@ -128,6 +128,15 @@
         <button type="button" data-action="selectAll">{{localize "STL.Browser.SelectAll"}}</button>
         {{#if selectedCount}}
           <button type="button" data-action="clearSelection">{{localize "STL.Browser.ClearSelection"}}</button>
+          <button type="button" class="stl-danger" data-action="removeImages">
+            <i class="fas fa-trash"></i> {{localize "STL.Remove.Action"}}
+          </button>
+        {{/if}}
+        {{#if removedCount}}
+          <button type="button" data-action="restoreRemoved"
+                  data-tooltip="{{localize 'STL.Remove.RestoreHint'}}">
+            <i class="fas fa-rotate-left"></i> {{localize "STL.Remove.Restore"}} ({{removedCount}})
+          </button>
         {{/if}}
       </div>
 

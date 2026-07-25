@@ -18,8 +18,9 @@ import { MODULE_ID, RING_MODES, SETTINGS } from '../constants.js';
 import { get } from '../settings.js';
 import {
   categories, category, facets as allFacets, facetsFor, images as libraryImages,
-  imageCount, isBuilt, build, setImageFacets,
+  imageCount, isBuilt, build, setImageFacets, removeImages, restoreRemoved,
 } from '../library/index.js';
+import { libApi } from '../integrations/lib.js';
 import { savedSelection } from '../library/matching.js';
 import { applyToActor, applyToTokens, ringMode, resolveActorTarget } from '../ring/apply.js';
 import { pendingBakes, currentVariant, needsProcessing } from '../ring/bake.js';
@@ -44,6 +45,8 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       selectAll:       TokenLibraryBrowser.#onSelectAll,
       clearSelection:  TokenLibraryBrowser.#onClearSelection,
       applyTags:       TokenLibraryBrowser.#onApplyTags,
+      removeImages:    TokenLibraryBrowser.#onRemoveImages,
+      restoreRemoved:  TokenLibraryBrowser.#onRestoreRemoved,
       applyToTokens:   TokenLibraryBrowser.#onApplyToTokens,
       applyToActor:    TokenLibraryBrowser.#onApplyToActor,
       loadMore:        TokenLibraryBrowser.#onLoadMore,
@@ -143,6 +146,7 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       shownCount: shown.length,
       hasMore: matches.length > shown.length,
       selectedCount: this.#selection.size,
+      removedCount: active?.removed?.length ?? 0,
       // The tag panel offers every trait defined anywhere, not just the ones
       // already present here — otherwise a category of untagged art could never
       // get its first trait.
@@ -236,6 +240,34 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     await setImageFacets(this.categoryId, paths, assignments);
     ui.notifications?.info(game.i18n.format('STL.Tag.Applied', { count: paths.length }));
     log.log(`tagged ${paths.length} image(s) in "${this.categoryId}"`);
+    this.render();
+  }
+
+  /**
+   * Remove the selected images from the library.
+   *
+   * Deliberately explicit that the files survive: Foundry gives modules no way
+   * to delete them, and a GM who expects otherwise would go looking for freed
+   * disk space that never appears.
+   */
+  static async #onRemoveImages() {
+    if (!this.#selection.size) return;
+    const paths = [...this.#selection];
+
+    const confirmed = await confirmDialog(
+      game.i18n.localize('STL.Remove.Title'),
+      game.i18n.format('STL.Remove.Message', { count: paths.length }),
+    );
+    if (!confirmed) return;
+
+    await removeImages(this.categoryId, paths);
+    this.#selection.clear();
+    ui.notifications?.info(game.i18n.format('STL.Remove.Done', { count: paths.length }));
+    this.render();
+  }
+
+  static async #onRestoreRemoved() {
+    await restoreRemoved(this.categoryId);
     this.render();
   }
 
@@ -347,6 +379,16 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     this.#visible = PAGE_SIZE;
     this.render();
   }
+}
+
+/** Confirmation dialog, preferring the lib's shared helper. */
+async function confirmDialog(title, content) {
+  const dialogs = libApi()?.utils?.dialogs;
+  if (dialogs?.confirm) return dialogs.confirm(title, content);
+  const result = await foundry.applications.api.DialogV2.confirm({
+    window: { title }, content, rejectClose: false,
+  });
+  return result === true;
 }
 
 /** Human-readable trait summary for a thumbnail tooltip. */

@@ -166,6 +166,18 @@ export async function build({ scan = true } = {}) {
   const facetMap = new Map();
   const categoryMap = new Map();
 
+  // Gather suppressions first. The overlay is loaded last, so a removal it
+  // records has to be known before earlier sources — and the directory scan —
+  // get a chance to add the image back.
+  const removed = new Set();
+  for (const src of sources) {
+    for (const c of src.manifest.categories) {
+      for (const image of c.images) {
+        if (image.removed) removed.add(image.external ? image.file : join(src.root, image.file));
+      }
+    }
+  }
+
   for (const src of sources) {
     if (!src.readOnly) state.overlay = src.manifest;
 
@@ -181,7 +193,7 @@ export async function build({ scan = true } = {}) {
     for (const c of src.manifest.categories) {
       const existing = categoryMap.get(c.id) ?? {
         id: c.id, label: c.label, match: { names: [], creatureTypes: [] },
-        images: [], readOnly: true,
+        images: [], removed: [], readOnly: true,
       };
       existing.label = c.label || existing.label;
       existing.match.names = [...new Set([...existing.match.names, ...c.match.names])];
@@ -190,6 +202,10 @@ export async function build({ scan = true } = {}) {
 
       for (const image of c.images) {
         const path = image.external ? image.file : join(src.root, image.file);
+        if (removed.has(path)) {
+          if (!existing.removed.includes(path)) existing.removed.push(path);
+          continue;
+        }
         if (existing.images.some(i => i.path === path)) continue;
         existing.images.push({
           path,
@@ -209,7 +225,7 @@ export async function build({ scan = true } = {}) {
   state.facets = [...facetMap.values()];
   state.categories = categoryMap;
 
-  if (scan) await scanArtDirectories(sources);
+  if (scan) await scanArtDirectories(sources, removed);
 
   for (const cat of state.categories.values()) {
     cat.images.sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
@@ -227,7 +243,7 @@ export async function build({ scan = true } = {}) {
  * inferred from filenames, so a GM can populate the library by dropping folders
  * in and never opening the JSON.
  */
-async function scanArtDirectories(sources) {
+async function scanArtDirectories(sources, removed = new Set()) {
   const scanRoots = [
     { id: 'overlay', root: libraryRoot(), readOnly: false, source: source() },
     // Art packs are modules, so they always live in the "data" bucket even when
@@ -251,6 +267,7 @@ async function scanArtDirectories(sources) {
           label: titleCase(basename(dir)),
           match: { names: [basename(dir).toLowerCase()], creatureTypes: [] },
           images: [],
+          removed: [],
           readOnly: scanRoot.readOnly,
         };
         state.categories.set(categoryId, cat);
@@ -259,6 +276,10 @@ async function scanArtDirectories(sources) {
       if (!scanRoot.readOnly) cat.readOnly = false;
 
       for (const path of await browseImages(scanRoot.source, dir)) {
+        if (removed.has(path)) {
+          if (!cat.removed.includes(path)) cat.removed.push(path);
+          continue;
+        }
         if (cat.images.some(i => i.path === path)) continue;
         const filename = basename(path);
         cat.images.push({
@@ -368,18 +389,7 @@ export async function setImageFacets(categoryId, paths, assignments) {
   for (const image of cat.images) {
     if (!targets.has(image.path)) continue;
     if (image.readOnly) continue; // Art-pack images are not ours to rewrite.
-
-    const relative = image.path.startsWith(`${libraryRoot()}/`)
-      ? image.path.slice(libraryRoot().length + 1)
-      : image.path;
-    const external = relative === image.path;
-
-    let record = entry.images.find(i => i.file === relative);
-    if (!record) {
-      record = { file: relative, external, facets: { ...image.facets } };
-      entry.images.push(record);
-    }
-
+    const record = overlayRecordFor(entry, image);
     for (const [facetId, value] of Object.entries(assignments)) {
       if (value) record.facets[facetId] = value;
       else delete record.facets[facetId];
@@ -387,6 +397,77 @@ export async function setImageFacets(categoryId, paths, assignments) {
   }
 
   await commit(draft);
+}
+
+/**
+ * How an image path is written into the overlay manifest: relative to the
+ * library root where possible, absolute and flagged external otherwise.
+ */
+function relativise(path) {
+  const prefix = `${libraryRoot()}/`;
+  return path.startsWith(prefix)
+    ? { file: path.slice(prefix.length), external: false }
+    : { file: path, external: true };
+}
+
+/** Find or create this image's entry in an overlay category. */
+function overlayRecordFor(entry, image) {
+  const { file, external } = relativise(image.path);
+  let record = entry.images.find(i => i.file === file);
+  if (!record) {
+    record = { file, external, facets: { ...image.facets } };
+    entry.images.push(record);
+  }
+  return record;
+}
+
+/**
+ * Remove images from the library.
+ *
+ * Foundry exposes no file-delete API — file-picker.mjs offers only browse,
+ * createDirectory and upload — so the files stay on disk and the manifest
+ * records the removal. That is also what makes it stick: the directory scan
+ * would otherwise re-add anything still present, and it is reversible.
+ *
+ * Art-pack images can be removed too; the suppression simply lives in the GM's
+ * overlay rather than in the pack.
+ *
+ * @param {string} categoryId
+ * @param {string[]} paths Full paths of the images to remove.
+ */
+export async function removeImages(categoryId, paths) {
+  const cat = category(categoryId);
+  if (!cat || !paths.length) return;
+
+  const draft = draftOverlay();
+  const entry = ensureOverlayCategory(draft, categoryId);
+  const targets = new Set(paths);
+
+  for (const image of cat.images) {
+    if (!targets.has(image.path)) continue;
+    overlayRecordFor(entry, image).removed = true;
+  }
+
+  await commit(draft);
+  log.log(`removed ${paths.length} image(s) from "${categoryId}" (files left on disk)`);
+}
+
+/** Bring back everything previously removed from a category. */
+export async function restoreRemoved(categoryId) {
+  const draft = draftOverlay();
+  const entry = draft.categories.find(c => c.id === categoryId);
+  if (!entry) return;
+
+  let restored = 0;
+  for (const record of entry.images) {
+    if (!record.removed) continue;
+    delete record.removed;
+    restored++;
+  }
+  if (!restored) return;
+
+  await commit(draft);
+  log.log(`restored ${restored} removed image(s) in "${categoryId}"`);
 }
 
 /** Announce that the library is queryable. Called once from main.js. */
