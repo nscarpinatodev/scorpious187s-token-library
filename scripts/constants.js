@@ -15,6 +15,7 @@ export const SETTINGS = Object.freeze({
   LIBRARY_SOURCE: 'librarySource',
   RING_MODE:      'ringMode',
   FRAME_SRC:      'frameSrc',
+  MASK_MODE:      'maskMode',
   RING_MASK:      'ringMask',
   RING_SCALE:     'ringScale',
   RING_COLOR:     'ringColor',
@@ -43,12 +44,18 @@ export const RING_MODES = Object.freeze({
 });
 
 /**
- * Tokenizer 2's circular subject mask, the sensible default for dynamic rings.
- * Used only as an initial value — the GM can point RING_MASK anywhere, or
- * clear it to feed the ring unmasked art.
+ * How the subject artwork is clipped before a ring or frame is applied.
+ *
+ * CIRCLE is procedural, so it needs no asset and cannot 404 or be misread.
+ * IMAGE uses a mask file, kept for shaped masks; the art survives wherever the
+ * mask is opaque (see ring/compositor.js). NONE feeds the artwork through
+ * untouched, for art that is already circular on transparency.
  */
-export const DEFAULT_RING_MASK =
-  `modules/${TOKENIZER_ID}/img/masks/dynamic-ring-circle-mask.webp`;
+export const MASK_MODES = Object.freeze({
+  CIRCLE: 'circle',
+  IMAGE:  'image',
+  NONE:   'none',
+});
 
 /** Actor/token flags on this module's namespace. */
 export const FLAGS = Object.freeze({

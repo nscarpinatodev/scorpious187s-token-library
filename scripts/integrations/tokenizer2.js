@@ -1,9 +1,11 @@
 /**
  * Tokenizer 2 integration.
  *
- * Tokenizer 2 does every pixel operation this module needs, so we never write
- * compositing code of our own. Its API is published on both `window.Tokenizer2`
- * and `game.modules.get("tokenizer-2").api` once its init has run:
+ * Tokenizer 2 is the *authoring* tool: the editor round-trip when importing
+ * images, and its frame browser. Bulk library processing deliberately does not
+ * go through it — see ring/compositor.js for why. Its API is published on both
+ * `window.Tokenizer2` and `game.modules.get("tokenizer-2").api` once its init
+ * has run:
  *
  *   tokenize(actor, options)      composite + save + write the actor
  *   exportLayers(layers, options) composite to a Blob with no actor involved
@@ -28,65 +30,6 @@ export function api() {
 /** True when Tokenizer 2 is installed, active, and has published its API. */
 export function available() {
   return !!api();
-}
-
-/**
- * Guard for features that genuinely cannot work without Tokenizer 2 (frame
- * baking, the import round-trip). Dynamic ring mode never needs it.
- * @param {string} feature Localised feature name for the notification.
- * @returns {boolean} True when it is safe to proceed.
- */
-export function requireTokenizer(feature) {
-  if (available()) return true;
-  ui.notifications?.warn(game.i18n.format('STL.Warn.TokenizerRequired', { feature }));
-  log.warn(`"${feature}" needs Tokenizer 2, which is not available`);
-  return false;
-}
-
-/**
- * Composite an art image and return the result as a Blob.
- *
- * This is the actorless path — exportLayers() takes a layer stack and hands
- * back {blob, dataURL}, which is exactly what bulk processing needs.
- *
- * Both presentation modes come through here:
- *   • frame mode passes a frameSrc, which is stacked over the art;
- *   • dynamic-ring mode passes a maskSrc, which clips the art to the ring's
- *     inner circle so a square portrait does not spill outside the ring.
- *     Tokenizer's own auto-tokenize does the same thing — it hands `maskSrc`
- *     to tokenize() alongside forceDynamicRing.
- *
- * @param {string} artSrc Full path to the source artwork.
- * @param {object} [options]
- * @param {string|null} [options.frameSrc]  Frame stacked above the art.
- * @param {string|null} [options.maskSrc]   Mask clipping the art.
- * @param {number} [options.exportSize]
- * @param {string} [options.exportFormat]   "webp" | "png"
- * @returns {Promise<Blob>}
- */
-export async function compositeToBlob(artSrc, { frameSrc = null, maskSrc = null, exportSize, exportFormat } = {}) {
-  const tokenizer = api();
-  if (!tokenizer) throw new Error('Tokenizer 2 is not available');
-
-  const art = tokenizer.createImageLayer(artSrc, 'Art');
-
-  if (maskSrc) {
-    // Tokenizer's layer masks are {id, type, src, ringConfig}; "custom" is the
-    // general image-mask type its own applyCustomMasks() uses.
-    art.masks.push({
-      id: foundry.utils.randomID(),
-      type: 'custom',
-      src: maskSrc,
-      ringConfig: null,
-    });
-  }
-
-  const layers = [art];
-  if (frameSrc) layers.push(tokenizer.createImageLayer(frameSrc, 'Frame'));
-
-  const { blob } = await tokenizer.exportLayers(layers, { exportSize, exportFormat });
-  if (!blob) throw new Error(`compositing produced no output for ${artSrc}`);
-  return blob;
 }
 
 /**

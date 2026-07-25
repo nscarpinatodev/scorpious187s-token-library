@@ -6,7 +6,8 @@
       "label": "Race",
       "values": [
         "human",
-        "tiefling"
+        "tiefling",
+        "dragonborn"
       ]
     },
     {
@@ -94,32 +95,50 @@
         {
           "file": "art/commoner/openart-021778528515885fef143c4098cd8cc7e0dd8c08d18f9dbf6903c_0_1778528564110_9a1b56d1.png",
           "external": false,
-          "facets": {}
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         },
         {
           "file": "art/commoner/openart-021778529082469f147e4ba9f32c95179b8fd5b208fc9b4fdbada_0_1778529131896_748b99b2.png",
           "external": false,
-          "facets": {}
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         },
         {
           "file": "art/commoner/openart-0217785300249664d21f3e3e165e25fcf12f86815b4407f73dcbb_0_1778530076084_2247af0f.png",
           "external": false,
-          "facets": {}
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         },
         {
           "file": "art/commoner/openart-02177852876978381fbe8801b4cfc8e3454077f6383f7cf6013b4_0_1778528818939_871844dc.png",
           "external": false,
-          "facets": {}
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         },
         {
           "file": "art/commoner/openart-02177853031766299f4740eadd3360aa6250e68d85f7ec7c856e9_0_1778530366205_0ff91a9b.png",
           "external": false,
-          "facets": {}
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         },
         {
           "file": "art/commoner/openart-02177853059678696d528c8df2143421f3e331d7739c2b1e1ed01_0_1778530646670_a70ede9c.png",
           "external": false,
-          "facets": {}
+          "facets": {
+            "race": "human",
+            "gender": "female"
+          }
         }
       ]
     }

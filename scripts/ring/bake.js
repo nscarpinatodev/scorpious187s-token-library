@@ -17,13 +17,13 @@
  * canvas composite plus one upload per image.
  */
 
-import { SETTINGS, RING_MODES } from '../constants.js';
+import { SETTINGS, RING_MODES, MASK_MODES } from '../constants.js';
 import { get } from '../settings.js';
 import {
   bakedDir, frameIdFor, join, swapExtension, source, slugify, basename,
 } from '../storage/paths.js';
 import { browse, uploadBlob } from '../storage/files.js';
-import { compositeToBlob, available as tokenizerAvailable } from '../integrations/tokenizer2.js';
+import { composite } from './compositor.js';
 import { log } from '../logger.js';
 
 /** Directory listings keyed by variant directory, so we browse once per run. */
@@ -39,44 +39,59 @@ export function frameSrc() {
   return get(SETTINGS.FRAME_SRC) || '';
 }
 
-/** The configured dynamic-ring subject mask, or '' when masking is disabled. */
+/** The configured custom mask image, only meaningful in MASK_MODES.IMAGE. */
 export function maskSrc() {
   return get(SETTINGS.RING_MASK) || '';
+}
+
+/** How the subject should be clipped, falling back to CIRCLE for bad values. */
+export function maskMode() {
+  const configured = get(SETTINGS.MASK_MODE);
+  if (configured === MASK_MODES.NONE) return MASK_MODES.NONE;
+  // "image" without a file chosen would silently do nothing; treat it as circle.
+  if (configured === MASK_MODES.IMAGE && maskSrc()) return MASK_MODES.IMAGE;
+  if (configured === MASK_MODES.IMAGE) return MASK_MODES.CIRCLE;
+  return MASK_MODES.CIRCLE;
 }
 
 /**
  * @typedef {object} Variant
  * @property {string} id        Directory-safe id for this variant's output.
  * @property {string|null} frameSrc
+ * @property {string} maskMode
  * @property {string|null} maskSrc
  * @property {string} label     Human-readable, for the UI.
  */
 
 /**
  * What processing the current settings call for.
+ *
+ * The id encodes every input that changes the output, so switching frame or
+ * mask writes to a fresh directory instead of colliding with stale files.
  * @returns {Variant|null} null when the raw art can be used as-is.
  */
 export function currentVariant() {
   const mode = get(SETTINGS.RING_MODE) === RING_MODES.FRAME ? RING_MODES.FRAME : RING_MODES.DYNAMIC;
+  const clip = maskMode();
+  const frame = mode === RING_MODES.FRAME ? frameSrc() : '';
 
-  if (mode === RING_MODES.FRAME) {
-    const frame = frameSrc();
-    if (!frame) return null; // No frame chosen; nothing to composite yet.
-    return {
-      id: `frame-${frameIdFor(frame)}`,
-      frameSrc: frame,
-      maskSrc: null,
-      label: basename(frame),
-    };
-  }
+  // Nothing to do: no frame to lay on, and the art is used unclipped.
+  if (!frame && clip === MASK_MODES.NONE) return null;
 
-  const mask = maskSrc();
-  if (!mask) return null; // Unmasked dynamic ring — raw art is used directly.
+  const maskPart = clip === MASK_MODES.IMAGE
+    ? `img-${slugify(basename(maskSrc()).replace(/\.\w+$/, '')) || 'mask'}`
+    : clip;
+
+  const parts = frame ? [`frame-${frameIdFor(frame)}`, maskPart] : [`ring-${maskPart}`];
+  const labels = [frame ? basename(frame) : null, clip === MASK_MODES.IMAGE ? basename(maskSrc()) : clip]
+    .filter(Boolean);
+
   return {
-    id: `ring-${slugify(basename(mask).replace(/\.\w+$/, '')) || 'mask'}`,
-    frameSrc: null,
-    maskSrc: mask,
-    label: basename(mask),
+    id: parts.join('-'),
+    frameSrc: frame || null,
+    maskMode: clip,
+    maskSrc: clip === MASK_MODES.IMAGE ? maskSrc() : null,
+    label: labels.join(' + '),
   };
 }
 
@@ -166,7 +181,6 @@ export async function pendingBakes(images) {
 export async function bakeImages(images, { onProgress, shouldStop, force = false } = {}) {
   const variant = currentVariant();
   if (!variant) throw new Error('the current settings need no processing');
-  if (!tokenizerAvailable()) throw new Error('Tokenizer 2 is not available');
 
   const exportSize = Number(get(SETTINGS.EXPORT_SIZE)) || 512;
   const exportFormat = get(SETTINGS.EXPORT_FORMAT) || 'webp';
@@ -181,11 +195,12 @@ export async function bakeImages(images, { onProgress, shouldStop, force = false
     if (shouldStop?.()) break;
     const image = targets[i];
     try {
-      const blob = await compositeToBlob(image.path, {
+      const blob = await composite(image.path, {
         frameSrc: variant.frameSrc,
+        maskMode: variant.maskMode,
         maskSrc: variant.maskSrc,
-        exportSize,
-        exportFormat,
+        size: exportSize,
+        format: exportFormat,
       });
       const target = variantPathFor(image, variant);
       const dir = target.slice(0, target.lastIndexOf('/'));

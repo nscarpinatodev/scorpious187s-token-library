@@ -8,7 +8,7 @@
  */
 
 import {
-  MODULE_ID, SETTINGS, DEFAULT_ROOT, RING_MODES, HOOK_PATH_CHANGED, DEFAULT_RING_MASK,
+  MODULE_ID, SETTINGS, DEFAULT_ROOT, RING_MODES, HOOK_PATH_CHANGED, MASK_MODES,
 } from './constants.js';
 
 /**
@@ -97,6 +97,20 @@ export function registerSettings() {
     default: '',
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.MASK_MODE, {
+    name: t('MaskMode'),
+    hint: t('MaskModeHint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      [MASK_MODES.CIRCLE]: t('MaskModeCircle'),
+      [MASK_MODES.IMAGE]:  t('MaskModeImage'),
+      [MASK_MODES.NONE]:   t('MaskModeNone'),
+    },
+    default: MASK_MODES.CIRCLE,
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.RING_MASK, {
     name: t('RingMask'),
     hint: t('RingMaskHint'),
@@ -104,7 +118,7 @@ export function registerSettings() {
     config: true,
     type: String,
     filePicker: 'image',
-    default: DEFAULT_RING_MASK,
+    default: '',
   });
 
   game.settings.register(MODULE_ID, SETTINGS.RING_SCALE, {

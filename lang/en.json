@@ -17,8 +17,14 @@
   "STL.Settings.FrameSrc": "Token Frame",
   "STL.Settings.FrameSrcHint": "The frame image composited behind and around the artwork in Selected Token Frame mode. Ignored in Dynamic Token Ring mode.",
 
-  "STL.Settings.RingMask": "Dynamic Ring Subject Mask",
-  "STL.Settings.RingMaskHint": "Clips artwork to the dynamic ring's inner circle, so a square portrait does not spill outside the ring. Defaults to Tokenizer 2's circle mask. Clear this only if your art is already circular with a transparent background. Dynamic Token Ring mode only.",
+  "STL.Settings.MaskMode": "Subject Clipping",
+  "STL.Settings.MaskModeHint": "How artwork is clipped before a ring or frame is applied. A square portrait dropped straight into a dynamic ring spills outside it, so clipping is on by default.",
+  "STL.Settings.MaskModeCircle": "Circle (built in)",
+  "STL.Settings.MaskModeImage": "Custom mask image",
+  "STL.Settings.MaskModeNone": "None — use artwork as-is",
+
+  "STL.Settings.RingMask": "Custom Mask Image",
+  "STL.Settings.RingMaskHint": "Used when Subject Clipping is set to 'Custom mask image'. The artwork is kept wherever this image is opaque and erased where it is transparent, so a mask should be a solid shape on a transparent background. Tokenizer 2's masks under modules/tokenizer-2/img/masks/ work well.",
 
   "STL.Settings.ThumbnailSize": "Browser Thumbnail Size",
   "STL.Settings.ThumbnailSizeHint": "How large token images appear in the library browser. Larger sizes show fewer per row.",
@@ -141,7 +147,6 @@
 
   "STL.Frames.SectionLabel": "Token Library Frames",
 
-  "STL.Warn.TokenizerRequired": "{feature} requires the Tokenizer 2 module.",
   "STL.Warn.EmptySelection": "No images match the current selection.",
   "STL.Warn.NoTokensSelected": "Select one or more tokens on the canvas first.",
   "STL.Warn.NoActor": "No actor to apply to. Select a token or open the library from an actor sheet.",

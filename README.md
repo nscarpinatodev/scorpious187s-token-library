@@ -77,20 +77,27 @@ overrides the ring's subject mesh when that field is set; leaving it empty means
 the ring wraps whatever image was actually chosen. That is what lets randomised
 art keep its ring.
 
-The artwork is first clipped to the ring's inner circle, using Tokenizer 2's
-circle mask by default — a square portrait dropped straight into a dynamic ring
-spills outside it. If your art is already circular on a transparent background,
-clear the **Dynamic Ring Subject Mask** setting and the raw file is used as-is
-with no processing at all.
+The artwork is first clipped to a circle — a square portrait dropped straight
+into a dynamic ring spills outside it. **Subject Clipping** controls this:
 
-**Selected Token Frame** — the artwork is composited onto your chosen frame by
-Tokenizer 2 and the flat result becomes the token texture, with the dynamic ring
-off.
+| Mode | Behaviour |
+|---|---|
+| **Circle** (default) | A procedural inscribed circle. No asset needed, so nothing to misconfigure. |
+| **Custom mask image** | Artwork is kept where the mask is **opaque** and erased where it is transparent. A solid shape on a transparent background — Tokenizer 2's masks under `modules/tokenizer-2/img/masks/` work well. |
+| **None** | Artwork used untouched, for art that is already circular on transparency. |
+
+**Selected Token Frame** — the artwork is clipped, then your chosen frame is
+drawn over it, and the flat result becomes the token texture with the dynamic
+ring off.
 
 Both modes therefore write a processed file per image, under
 `baked/<variantId>/`. Applying a whole filtered set needs a one-time **Process
-Set** pass; the browser tells you when that is pending. These files are pure
-cache — deleting them only costs a re-run.
+Set** pass; the browser tells you when that is pending.
+
+The variant id encodes the frame and clipping settings, so changing either
+writes to a fresh directory rather than colliding with stale output. These files
+are pure cache — deleting `baked/` only costs a re-run, and is the way to force
+everything to regenerate.
 
 ## How art gets picked
 
@@ -170,8 +177,10 @@ by IsThisMyRealName, which pioneered the wildcard-driven approach to token
 variety in Foundry. This module is an independent implementation with an
 explicit manifest, an in-game editor, and token ring support.
 
-Image compositing is performed by [Tokenizer 2](https://www.patreon.com/MrPrimate)
-by MrPrimate.
+[Tokenizer 2](https://www.patreon.com/MrPrimate) by MrPrimate is used for
+authoring — the editor round-trip when importing images, and its frame browser.
+Bulk library processing is done in-module with a plain canvas, so its behaviour
+is fully defined here rather than depending on another module's internals.
 
 ## Licence
 
