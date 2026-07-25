@@ -17,7 +17,7 @@ import {
 } from '../library/index.js';
 import { inferFacets, unknownTokens } from '../library/infer.js';
 import { uploadBlob, ensureDir } from '../storage/files.js';
-import { artDir, source, basename, join } from '../storage/paths.js';
+import { artDir, source, basename, join, decodePath } from '../storage/paths.js';
 import { available as tokenizerAvailable } from '../integrations/tokenizer2.js';
 import { log } from '../logger.js';
 
@@ -130,7 +130,8 @@ export class ImportDialog extends HandlebarsApplicationMixin(ApplicationV2) {
     const FilePicker = foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
     new FilePicker({
       type: 'image',
-      callback: (path) => {
+      callback: (raw) => {
+        const path = decodePath(raw);
         if (!this.#queue.some(entry => entry.path === path)) {
           this.#queue.push({ name: basename(path), file: null, path });
         }

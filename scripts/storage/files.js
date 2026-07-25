@@ -9,7 +9,7 @@
  */
 
 import { IMAGE_EXTENSIONS, UPLOAD_CONCURRENCY } from '../constants.js';
-import { join, basename } from './paths.js';
+import { join, basename, decodePath } from './paths.js';
 import { log } from '../logger.js';
 
 /** The FilePicker class, via the v13+ namespaced location with a fallback. */
@@ -26,7 +26,11 @@ function picker() {
 export async function browse(source, path, options = {}) {
   try {
     const result = await picker().browse(source, path, options);
-    return { dirs: result?.dirs ?? [], files: result?.files ?? [] };
+    // Decoded at the boundary so no caller ever has to think about it.
+    return {
+      dirs: (result?.dirs ?? []).map(decodePath),
+      files: (result?.files ?? []).map(decodePath),
+    };
   } catch (err) {
     log.debug(`browse failed for "${path}":`, err?.message ?? err);
     return { dirs: [], files: [] };
@@ -85,7 +89,7 @@ export async function uploadBlob(source, dir, filename, blob, { notify = false }
     log.warn(`upload failed: ${join(dir, filename)}`);
     return null;
   }
-  return response.path;
+  return decodePath(response.path);
 }
 
 /** Upload a JSON-serialisable object as a pretty-printed .json file. */

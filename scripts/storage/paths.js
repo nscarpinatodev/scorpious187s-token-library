@@ -12,6 +12,29 @@
 import { DIRS, MANIFEST_FILE, DEFAULT_ROOT, SETTINGS } from '../constants.js';
 import { get } from '../settings.js';
 
+/**
+ * Percent-decode a path returned by Foundry's file APIs.
+ *
+ * FilePicker.browse() hands back paths already encoded for use in a URL, so a
+ * file called "Seralyne Elven Ears.png" arrives as "Seralyne%20Elven%20Ears.png".
+ * Carrying that through meant uploading a *new* file whose name literally
+ * contained "%20", and writing that into texture.src — which Foundry then
+ * encoded again to %2520 and failed to load ("Invalid Asset").
+ *
+ * The whole module therefore works in decoded space and lets the browser encode
+ * when it actually fetches. Malformed sequences are left alone rather than
+ * throwing.
+ */
+export function decodePath(path) {
+  const value = String(path ?? '');
+  if (!value.includes('%')) return value;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 /** Strip leading/trailing slashes so joins never double up. */
 export function trimSlashes(path) {
   return String(path ?? '').replace(/^\/+|\/+$/g, '');

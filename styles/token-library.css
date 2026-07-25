@@ -208,27 +208,39 @@
   gap: 8px;
   padding: 10px 12px;
   align-content: start;
+  /* Grid items stretch to their row by default, which makes the block size
+     definite and disables aspect-ratio. Size to content instead. */
+  align-items: start;
 }
 
 /*
- * Core CSS (@layer elements.forms) gives every <button> a fixed
- * `height: var(--button-size)` plus `min-height`. With aspect-ratio: 1 that
- * collapsed the thumbnails to ~30px squares, because the width was being
- * derived from that height. Module CSS is unlayered so it already outranks the
- * layered rule -- it just has to actually set the sizing properties.
+ * Squareness comes from `height: 0` + `padding-bottom: 100%`, not aspect-ratio.
+ *
+ * Two separate things went wrong with the obvious approaches. Core CSS
+ * (@layer elements.forms) gives every <button> a fixed height/min-height, which
+ * collapsed the thumbnails to ~30px. Overriding that and using aspect-ratio
+ * then created a cyclic dependency with the image's percentage height, so the
+ * button resolved to the image's intrinsic height and tall portraits overran
+ * into the next row.
+ *
+ * The padding-bottom ratio predates aspect-ratio and has no such interactions:
+ * padding percentages always resolve against the *width*, so the box is exactly
+ * square whatever the content or the row does. The border is drawn with an
+ * inset shadow rather than a real border so it adds no height and selection
+ * does not shift the layout.
  */
 .stl-thumb {
   position: relative;
   display: block;
   width: 100%;
   min-width: 0;
-  height: auto;
+  height: 0;
   min-height: 0;
-  aspect-ratio: 1;
-  padding: 0;
-  border: 2px solid transparent;
+  padding: 0 0 100% 0;
+  border: none;
   border-radius: var(--stl-radius);
   background: var(--stl-bg-item);
+  box-shadow: inset 0 0 0 1px var(--stl-border);
   cursor: pointer;
   overflow: hidden;
 }
@@ -236,22 +248,15 @@
 .stl-thumb:hover { background: var(--stl-bg-item-hover); }
 
 .stl-thumb.selected {
-  border-color: var(--stl-accent);
-  box-shadow: 0 0 8px rgba(201, 162, 39, 0.5);
+  box-shadow: inset 0 0 0 3px var(--stl-accent), 0 0 8px rgba(201, 162, 39, 0.5);
 }
 
-/*
- * Absolutely positioned on purpose. A percentage height inside a box whose own
- * height comes from aspect-ratio is a cyclic dependency: the browser resolves
- * the button from the image's intrinsic height instead, and tall portraits then
- * overrun into the next grid row. Taking the image out of flow breaks the cycle,
- * so the button's height is always exactly its width.
- */
+/* Out of flow, so the image can never contribute to the button's height. */
 .stl-thumb img {
   position: absolute;
-  inset: 3px;
-  width: calc(100% - 6px);
-  height: calc(100% - 6px);
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
   max-width: none;
   object-fit: contain;
   border: none;

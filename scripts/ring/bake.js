@@ -20,7 +20,7 @@
 import { SETTINGS, RING_MODES, MASK_MODES, COMPOSITE_VERSION } from '../constants.js';
 import { get } from '../settings.js';
 import {
-  bakedDir, frameIdFor, join, swapExtension, source, slugify, basename,
+  bakedDir, frameIdFor, join, swapExtension, source, slugify, basename, decodePath,
 } from '../storage/paths.js';
 import { browse, uploadBlob } from '../storage/files.js';
 import { composite } from './compositor.js';
@@ -34,14 +34,17 @@ export function invalidateCache() {
   listingCache.clear();
 }
 
-/** The configured frame image path, or '' when none is chosen. */
+/**
+ * The configured frame image path, or '' when none is chosen.
+ * Decoded because a file-picker setting stores whatever the picker handed back.
+ */
 export function frameSrc() {
-  return get(SETTINGS.FRAME_SRC) || '';
+  return decodePath(get(SETTINGS.FRAME_SRC) || '');
 }
 
 /** The configured custom mask image, only meaningful in MASK_MODES.IMAGE. */
 export function maskSrc() {
-  return get(SETTINGS.RING_MASK) || '';
+  return decodePath(get(SETTINGS.RING_MASK) || '');
 }
 
 /** How the subject should be clipped, falling back to CIRCLE for bad values. */
