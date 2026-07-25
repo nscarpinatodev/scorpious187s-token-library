@@ -7,7 +7,9 @@
  * that makeLogger() reads.
  */
 
-import { MODULE_ID, SETTINGS, DEFAULT_ROOT, RING_MODES, HOOK_PATH_CHANGED } from './constants.js';
+import {
+  MODULE_ID, SETTINGS, DEFAULT_ROOT, RING_MODES, HOOK_PATH_CHANGED, DEFAULT_RING_MASK,
+} from './constants.js';
 
 /**
  * The library root as it was last seen. A setting's onChange only receives the
@@ -95,6 +97,16 @@ export function registerSettings() {
     default: '',
   });
 
+  game.settings.register(MODULE_ID, SETTINGS.RING_MASK, {
+    name: t('RingMask'),
+    hint: t('RingMaskHint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    filePicker: 'image',
+    default: DEFAULT_RING_MASK,
+  });
+
   game.settings.register(MODULE_ID, SETTINGS.RING_SCALE, {
     name: t('RingScale'),
     hint: t('RingScaleHint'),
@@ -175,6 +187,18 @@ export function registerSettings() {
     type: String,
     choices: { webp: 'WebP', png: 'PNG' },
     default: 'webp',
+  });
+
+  // ── Browser ────────────────────────────────────────────────────────────────
+
+  game.settings.register(MODULE_ID, SETTINGS.THUMBNAIL_SIZE, {
+    name: t('ThumbnailSize'),
+    hint: t('ThumbnailSizeHint'),
+    scope: 'client',
+    config: true,
+    type: Number,
+    choices: { 96: '96px', 128: '128px', 192: '192px', 256: '256px' },
+    default: 256,
   });
 
   // ── Developer ──────────────────────────────────────────────────────────────

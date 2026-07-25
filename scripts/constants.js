@@ -15,6 +15,7 @@ export const SETTINGS = Object.freeze({
   LIBRARY_SOURCE: 'librarySource',
   RING_MODE:      'ringMode',
   FRAME_SRC:      'frameSrc',
+  RING_MASK:      'ringMask',
   RING_SCALE:     'ringScale',
   RING_COLOR:     'ringColor',
   RING_BACKGROUND:'ringBackground',
@@ -23,19 +24,31 @@ export const SETTINGS = Object.freeze({
   AUTO_APPLY_LINKED: 'autoApplyLinked',
   EXPORT_SIZE:    'exportSize',
   EXPORT_FORMAT:  'exportFormat',
+  THUMBNAIL_SIZE: 'thumbnailSize',
   DEBUG:          'debug',
 });
 
 /**
  * How a chosen image is turned into a rendered token.
+ *
  * DYNAMIC leaves ring.subject.texture blank on purpose so wildcards keep
  * randomising — see client/canvas/placeables/tokens/ring.mjs, which only
- * overrides the subject mesh when that field is truthy.
+ * overrides the subject mesh when that field is truthy. The artwork itself is
+ * still masked to a circle first, otherwise a square portrait spills outside
+ * the ring; that is what RING_MASK is for.
  */
 export const RING_MODES = Object.freeze({
   DYNAMIC: 'dynamic',
   FRAME:   'frame',
 });
+
+/**
+ * Tokenizer 2's circular subject mask, the sensible default for dynamic rings.
+ * Used only as an initial value — the GM can point RING_MASK anywhere, or
+ * clear it to feed the ring unmasked art.
+ */
+export const DEFAULT_RING_MASK =
+  `modules/${TOKENIZER_ID}/img/masks/dynamic-ring-circle-mask.webp`;
 
 /** Actor/token flags on this module's namespace. */
 export const FLAGS = Object.freeze({
@@ -55,7 +68,10 @@ export const DEFAULT_ROOT = `modules/${MODULE_ID}/${STORAGE_SUBDIR}`;
 export const DIRS = Object.freeze({
   /** Borderless subject art, one directory per category. */
   ART:    'art',
-  /** Frame-mode composites: baked/<frameId>/<categoryId>/<file>. Derived, disposable. */
+  /**
+   * Processed variants: baked/<variantId>/<categoryId>/<file>. Derived and
+   * disposable — frame composites, or dynamic-ring subject masking.
+   */
   BAKED:  'baked',
   /** GM-supplied frame images. */
   FRAMES: 'frames',

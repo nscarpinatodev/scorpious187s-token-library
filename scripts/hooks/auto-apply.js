@@ -15,12 +15,12 @@
  * the warmed bake cache and falls back to a post-create fix-up on a miss.
  */
 
-import { SETTINGS, MODULE_ID, FLAGS, RING_MODES } from '../constants.js';
+import { SETTINGS, MODULE_ID, FLAGS } from '../constants.js';
 import { get } from '../settings.js';
 import { isBuilt, images as libraryImages, randomImage } from '../library/index.js';
 import { savedSelection, matchCategory } from '../library/matching.js';
-import { ringFields, ringMode, updateForImage } from '../ring/apply.js';
-import { bakedPathFor, isBakedSync } from '../ring/bake.js';
+import { ringFields, updateForImage } from '../ring/apply.js';
+import { variantPathFor, hasVariantSync, currentVariant } from '../ring/bake.js';
 import { log } from '../logger.js';
 
 /**
@@ -48,11 +48,12 @@ function isDefaultArtwork(src) {
 
 /**
  * Resolve the texture path for an image without awaiting.
- * @returns {string|null} null when frame mode has no baked composite ready.
+ * @returns {string|null} null when the processed variant is not ready yet.
  */
 function syncTexturePath(image) {
-  if (ringMode() !== RING_MODES.FRAME) return image.path;
-  return isBakedSync(image) ? bakedPathFor(image) : null;
+  const variant = currentVariant();
+  if (!variant) return image.path;
+  return hasVariantSync(image, variant) ? variantPathFor(image, variant) : null;
 }
 
 function onPreCreateToken(document, data, options, userId) {
@@ -61,7 +62,10 @@ function onPreCreateToken(document, data, options, userId) {
   if (game.user.id !== userId || !game.user.isGM) return;
   if (!isBuilt()) return;
 
-  const actor = document.actor;
+  // Selections and match rules live on the world actor. For an unlinked token
+  // `document.actor` can be the synthetic delta-backed actor, which carries
+  // neither, so prefer the base actor.
+  const actor = document.baseActor ?? document.actor;
   if (!actor) return;
 
   const choice = chooseImage(actor, document);
@@ -69,7 +73,7 @@ function onPreCreateToken(document, data, options, userId) {
 
   const src = syncTexturePath(choice.image);
   if (!src) {
-    // Frame mode, composite not baked yet — finish asynchronously after create.
+    // Processed variant not ready — finish asynchronously after create.
     deferred.push({ actorId: actor.id, image: choice.image });
     log.debug(`deferring frame-mode apply for "${actor.name}" (composite not baked)`);
     return;
@@ -118,7 +122,8 @@ function chooseImage(actor, document) {
 async function onCreateToken(document, options, userId) {
   if (game.user.id !== userId || !game.user.isGM) return;
 
-  const index = deferred.findIndex(entry => entry.actorId === document.actor?.id);
+  const actorId = document.baseActor?.id ?? document.actor?.id;
+  const index = deferred.findIndex(entry => entry.actorId === actorId);
   if (index === -1) return;
   const [pending] = deferred.splice(index, 1);
 
@@ -133,7 +138,7 @@ async function onCreateToken(document, options, userId) {
 
 /** Exposed for the browser's "reroll this token" action. */
 export function rerollToken(tokenDocument) {
-  const actor = tokenDocument?.actor;
+  const actor = tokenDocument?.baseActor ?? tokenDocument?.actor;
   if (!actor) return null;
   const saved = savedSelection(actor);
   if (!saved) return null;

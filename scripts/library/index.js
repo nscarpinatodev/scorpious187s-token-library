@@ -337,6 +337,58 @@ export function draftOverlay() {
   return foundry.utils.deepClone(state.overlay);
 }
 
+/**
+ * Assign trait values to specific images.
+ *
+ * Filename inference only helps when filenames say something; AI-generated
+ * names like `openart-0217785285…` carry nothing, so tagging by hand is the
+ * only way those images ever become filterable. Images discovered by the
+ * directory scan have no manifest entry yet, so one is created here.
+ *
+ * @param {string} categoryId
+ * @param {string[]} paths        Full paths of the images to tag.
+ * @param {Record<string,string>} assignments  facetId → value. An empty string
+ *        clears that facet on the selected images.
+ */
+export async function setImageFacets(categoryId, paths, assignments) {
+  const cat = category(categoryId);
+  if (!cat || !paths.length) return;
+
+  const draft = draftOverlay();
+  const entry = ensureOverlayCategory(draft, categoryId);
+  const targets = new Set(paths);
+
+  // Any new value must exist on its facet, or the filter chips will not offer it.
+  for (const [facetId, value] of Object.entries(assignments)) {
+    if (!value) continue;
+    const facet = ensureOverlayFacet(draft, facetId);
+    if (!facet.values.includes(value)) facet.values.push(value);
+  }
+
+  for (const image of cat.images) {
+    if (!targets.has(image.path)) continue;
+    if (image.readOnly) continue; // Art-pack images are not ours to rewrite.
+
+    const relative = image.path.startsWith(`${libraryRoot()}/`)
+      ? image.path.slice(libraryRoot().length + 1)
+      : image.path;
+    const external = relative === image.path;
+
+    let record = entry.images.find(i => i.file === relative);
+    if (!record) {
+      record = { file: relative, external, facets: { ...image.facets } };
+      entry.images.push(record);
+    }
+
+    for (const [facetId, value] of Object.entries(assignments)) {
+      if (value) record.facets[facetId] = value;
+      else delete record.facets[facetId];
+    }
+  }
+
+  await commit(draft);
+}
+
 /** Announce that the library is queryable. Called once from main.js. */
 export function announceReady() {
   Hooks.callAll(HOOK_READY, {

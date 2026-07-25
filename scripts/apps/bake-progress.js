@@ -7,7 +7,7 @@
  */
 
 import { MODULE_ID } from '../constants.js';
-import { bakeImages, frameSrc } from '../ring/bake.js';
+import { bakeImages, currentVariant } from '../ring/bake.js';
 import { log } from '../logger.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -42,7 +42,7 @@ export class BakeProgress extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext() {
     return {
-      frame: frameSrc().split('/').pop() ?? '',
+      frame: currentVariant()?.label ?? '',
       done: this.#done,
       total: this.#total || this.images.length,
       percent: this.#total ? Math.round((this.#done / this.#total) * 100) : 0,

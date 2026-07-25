@@ -10,7 +10,7 @@
  */
 
 import {
-  MODULE_ID, LIB_ID, SETTINGS, RING_MODES, HOOK_PATH_CHANGED,
+  MODULE_ID, LIB_ID, SETTINGS, HOOK_PATH_CHANGED,
 } from './constants.js';
 import { registerSettings, noteCurrentPath } from './settings.js';
 import {
@@ -18,7 +18,7 @@ import {
 } from './library/index.js';
 import { matchCategory, savedSelection } from './library/matching.js';
 import { applyToActor, applyToTokens, ringMode } from './ring/apply.js';
-import { warmCache, invalidateCache } from './ring/bake.js';
+import { warmCache, invalidateCache, needsProcessing } from './ring/bake.js';
 import { ensureLibraryTree, resumeInterruptedRelocation, runWithProgress } from './storage/relocate.js';
 import { browseImages } from './storage/files.js';
 import { framesDir, source } from './storage/paths.js';
@@ -84,9 +84,10 @@ Hooks.once('ready', async () => {
 
   await build();
 
-  // Frame mode has to answer "is this baked?" synchronously inside
-  // preCreateToken, so pre-list the composite directories now.
-  if (ringMode() === RING_MODES.FRAME) {
+  // preCreateToken has to answer "is the processed file there?" synchronously,
+  // so pre-list the variant directories now. Both modes can need this: frame
+  // mode composites, dynamic mode masks the subject to the ring's circle.
+  if (needsProcessing()) {
     await warmCache(categories().map(c => c.id));
   }
 
@@ -129,14 +130,15 @@ Hooks.on(HOOK_PATH_CHANGED, async (newPath, previousPath) => {
   await build();
 });
 
-/** A different frame or mode invalidates every cached bake listing. */
+/** A different frame, mask, mode, or format changes which variant files apply. */
 Hooks.on('updateSetting', async (setting) => {
   if (!setting?.key?.startsWith(`${MODULE_ID}.`)) return;
   const key = setting.key.split('.').slice(1).join('.');
-  if (![SETTINGS.FRAME_SRC, SETTINGS.RING_MODE, SETTINGS.EXPORT_FORMAT].includes(key)) return;
+  const relevant = [SETTINGS.FRAME_SRC, SETTINGS.RING_MASK, SETTINGS.RING_MODE, SETTINGS.EXPORT_FORMAT];
+  if (!relevant.includes(key)) return;
 
   invalidateCache();
-  if (ringMode() === RING_MODES.FRAME && isBuilt()) {
+  if (needsProcessing() && isBuilt()) {
     await warmCache(categories().map(c => c.id));
   }
 });
@@ -147,6 +149,10 @@ Hooks.on('updateSetting', async (setting) => {
 Hooks.on('getSceneControlButtons', (controls) => {
   if (!game.user.isGM) return;
 
+  // Only onChange. SceneControls#onChange invokes onChange *and* the deprecated
+  // onClick for the same activation, so registering both opens the browser
+  // twice — two apps sharing one DOM id, the second detaching the first's
+  // element and blowing up _updatePosition.
   const tool = {
     name: 'stl-browser',
     title: 'STL.Browser.Title',
@@ -155,7 +161,6 @@ Hooks.on('getSceneControlButtons', (controls) => {
     visible: true,
     order: 100,
     onChange: () => openBrowser(),
-    onClick: () => openBrowser(),
   };
 
   // v13 reshaped controls from an array into a record of control groups.

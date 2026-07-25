@@ -1,28 +1,35 @@
 /**
- * Frame-mode baking.
+ * Processed image variants.
  *
- * Dynamic ring mode costs nothing: Foundry draws the ring at render time. Frame
- * mode has to produce a real file per (frame × image), because a token texture
- * is one flat image. Those composites live under `baked/<frameId>/<category>/`
- * and are pure cache — deleting the directory only costs a re-bake.
+ * A token texture is one flat image, so neither presentation mode can use the
+ * raw artwork directly:
  *
- * Baking is deliberately explicit in the UI rather than implicit, since a large
- * category means one composite + one upload per image.
+ *   frame mode   needs the art composited under the chosen frame;
+ *   dynamic mode needs the art clipped to the ring's inner circle, or a square
+ *                portrait spills outside the ring Foundry draws.
+ *
+ * Both produce a file under `baked/<variantId>/<category>/`, which is pure
+ * cache — deleting it only costs a re-run. The one case that needs no
+ * processing at all is dynamic mode with the mask cleared, where the raw art is
+ * already ring-ready.
+ *
+ * Processing is explicit in the UI rather than implicit, because it is one
+ * canvas composite plus one upload per image.
  */
 
-import { SETTINGS } from '../constants.js';
+import { SETTINGS, RING_MODES } from '../constants.js';
 import { get } from '../settings.js';
 import {
-  bakedDir, frameIdFor, join, swapExtension, source,
+  bakedDir, frameIdFor, join, swapExtension, source, slugify, basename,
 } from '../storage/paths.js';
 import { browse, uploadBlob } from '../storage/files.js';
 import { compositeToBlob, available as tokenizerAvailable } from '../integrations/tokenizer2.js';
 import { log } from '../logger.js';
 
-/** Directory listings keyed by baked directory, so we browse once per bake run. */
+/** Directory listings keyed by variant directory, so we browse once per run. */
 const listingCache = new Map();
 
-/** Drop cached listings — call after baking or when the frame changes. */
+/** Drop cached listings — call after processing, or when the variant changes. */
 export function invalidateCache() {
   listingCache.clear();
 }
@@ -32,19 +39,62 @@ export function frameSrc() {
   return get(SETTINGS.FRAME_SRC) || '';
 }
 
-/** Stable id for the configured frame. */
-export function currentFrameId() {
-  return frameIdFor(frameSrc());
+/** The configured dynamic-ring subject mask, or '' when masking is disabled. */
+export function maskSrc() {
+  return get(SETTINGS.RING_MASK) || '';
 }
 
 /**
- * Where a library image's composite lives under the current frame.
- * @param {{categoryId: string, filename: string}} image
- * @returns {string}
+ * @typedef {object} Variant
+ * @property {string} id        Directory-safe id for this variant's output.
+ * @property {string|null} frameSrc
+ * @property {string|null} maskSrc
+ * @property {string} label     Human-readable, for the UI.
  */
-export function bakedPathFor(image, frameId = currentFrameId()) {
+
+/**
+ * What processing the current settings call for.
+ * @returns {Variant|null} null when the raw art can be used as-is.
+ */
+export function currentVariant() {
+  const mode = get(SETTINGS.RING_MODE) === RING_MODES.FRAME ? RING_MODES.FRAME : RING_MODES.DYNAMIC;
+
+  if (mode === RING_MODES.FRAME) {
+    const frame = frameSrc();
+    if (!frame) return null; // No frame chosen; nothing to composite yet.
+    return {
+      id: `frame-${frameIdFor(frame)}`,
+      frameSrc: frame,
+      maskSrc: null,
+      label: basename(frame),
+    };
+  }
+
+  const mask = maskSrc();
+  if (!mask) return null; // Unmasked dynamic ring — raw art is used directly.
+  return {
+    id: `ring-${slugify(basename(mask).replace(/\.\w+$/, '')) || 'mask'}`,
+    frameSrc: null,
+    maskSrc: mask,
+    label: basename(mask),
+  };
+}
+
+/** True when the current settings require processed files. */
+export function needsProcessing() {
+  return currentVariant() !== null;
+}
+
+/**
+ * Where a library image's processed file lives for a variant.
+ * @param {{categoryId: string, filename: string}} image
+ * @param {Variant} [variant]
+ * @returns {string|null} null when no processing applies.
+ */
+export function variantPathFor(image, variant = currentVariant()) {
+  if (!variant) return null;
   const format = get(SETTINGS.EXPORT_FORMAT) || 'webp';
-  return join(bakedDir(frameId, image.categoryId), swapExtension(image.filename, format));
+  return join(bakedDir(variant.id, image.categoryId), swapExtension(image.filename, format));
 }
 
 async function listing(dir) {
@@ -56,40 +106,43 @@ async function listing(dir) {
 }
 
 /**
- * Pre-list every baked directory for the current frame.
+ * Pre-list every variant directory for the current settings.
  *
- * preCreateToken has to decide on a texture synchronously, so in frame mode we
- * need to already know which composites exist. Called on ready and whenever the
- * frame or mode changes — one browse per category, and only in frame mode.
+ * preCreateToken has to decide on a texture synchronously, so we need to know
+ * up front which processed files exist. One browse per category, skipped
+ * entirely when no processing applies.
  * @param {string[]} categoryIds
  */
 export async function warmCache(categoryIds) {
-  const frameId = currentFrameId();
-  await Promise.all(categoryIds.map(id => listing(bakedDir(frameId, id))));
-  log.debug(`baked-cache warmed for ${categoryIds.length} categories`);
+  const variant = currentVariant();
+  if (!variant) return;
+  await Promise.all(categoryIds.map(id => listing(bakedDir(variant.id, id))));
+  log.debug(`variant cache warmed for ${categoryIds.length} categories (${variant.id})`);
 }
 
 /**
- * Synchronous "is this already baked?", answered from the warmed cache.
- * Returns false when the directory has not been listed yet, so callers treat an
- * unknown state as "not ready" rather than guessing.
+ * Synchronous "is this already processed?", answered from the warmed cache.
+ * An unlisted directory counts as "not ready" rather than a guess.
  */
-export function isBakedSync(image, frameId = currentFrameId()) {
-  const target = bakedPathFor(image, frameId);
+export function hasVariantSync(image, variant = currentVariant()) {
+  if (!variant) return true; // Raw art is always ready.
+  const target = variantPathFor(image, variant);
   const dir = target.slice(0, target.lastIndexOf('/'));
   return listingCache.get(dir)?.has(target) ?? false;
 }
 
 /**
- * Which of these images still need baking under the current frame.
+ * Which of these images still need processing under the current variant.
  * @param {Array<object>} images
  * @returns {Promise<Array<object>>}
  */
 export async function pendingBakes(images) {
-  const frameId = currentFrameId();
+  const variant = currentVariant();
+  if (!variant) return [];
+
   const pending = [];
   for (const image of images) {
-    const target = bakedPathFor(image, frameId);
+    const target = variantPathFor(image, variant);
     const dir = target.slice(0, target.lastIndexOf('/'));
     const files = await listing(dir);
     if (!files.has(target)) pending.push(image);
@@ -98,7 +151,7 @@ export async function pendingBakes(images) {
 }
 
 /**
- * Bake a set of images under the current frame.
+ * Produce processed files for a set of images.
  *
  * Sequential on purpose: each composite runs on a canvas and is followed by an
  * upload, so parallelism buys little and makes progress reporting misleading.
@@ -107,15 +160,14 @@ export async function pendingBakes(images) {
  * @param {object} [options]
  * @param {(done: number, total: number, image: object) => void} [options.onProgress]
  * @param {() => boolean} [options.shouldStop]
- * @param {boolean} [options.force] Re-bake even when a composite already exists.
+ * @param {boolean} [options.force] Re-process even when output already exists.
  * @returns {Promise<{baked: string[], skipped: number, failed: Array<{image: object, error: string}>}>}
  */
 export async function bakeImages(images, { onProgress, shouldStop, force = false } = {}) {
-  const frame = frameSrc();
-  if (!frame) throw new Error('no frame is configured');
+  const variant = currentVariant();
+  if (!variant) throw new Error('the current settings need no processing');
   if (!tokenizerAvailable()) throw new Error('Tokenizer 2 is not available');
 
-  const frameId = frameIdFor(frame);
   const exportSize = Number(get(SETTINGS.EXPORT_SIZE)) || 512;
   const exportFormat = get(SETTINGS.EXPORT_FORMAT) || 'webp';
 
@@ -129,8 +181,13 @@ export async function bakeImages(images, { onProgress, shouldStop, force = false
     if (shouldStop?.()) break;
     const image = targets[i];
     try {
-      const blob = await compositeToBlob(image.path, frame, { exportSize, exportFormat });
-      const target = bakedPathFor(image, frameId);
+      const blob = await compositeToBlob(image.path, {
+        frameSrc: variant.frameSrc,
+        maskSrc: variant.maskSrc,
+        exportSize,
+        exportFormat,
+      });
+      const target = variantPathFor(image, variant);
       const dir = target.slice(0, target.lastIndexOf('/'));
       const filename = target.slice(target.lastIndexOf('/') + 1);
       const stored = await uploadBlob(source(), dir, filename, blob);
@@ -138,23 +195,27 @@ export async function bakeImages(images, { onProgress, shouldStop, force = false
       else failed.push({ image, error: 'upload rejected' });
     } catch (err) {
       failed.push({ image, error: String(err?.message ?? err) });
-      log.warn(`bake failed for ${image.path}:`, err?.message ?? err);
+      log.warn(`processing failed for ${image.path}:`, err?.message ?? err);
     }
     onProgress?.(i + 1, targets.length, image);
   }
 
   invalidateCache();
-  log.log(`bake complete: ${baked.length} written, ${skipped} already present, ${failed.length} failed`);
+  log.log(`processing complete: ${baked.length} written, ${skipped} already present, ${failed.length} failed`);
   return { baked, skipped, failed };
 }
 
 /**
- * Ensure a single image is baked, baking it on demand.
- * @returns {Promise<string|null>} The baked path, or null when it could not be produced.
+ * Ensure one image has its processed file, producing it on demand.
+ * @returns {Promise<string|null>} The path to use, or null if it could not be made.
  */
 export async function ensureBaked(image) {
+  const variant = currentVariant();
+  if (!variant) return image.path;
+
   const [pending] = await pendingBakes([image]);
-  if (!pending) return bakedPathFor(image);
+  if (!pending) return variantPathFor(image, variant);
+
   const { baked } = await bakeImages([image]);
   return baked[0] ?? null;
 }

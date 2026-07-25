@@ -17,6 +17,12 @@
   "STL.Settings.FrameSrc": "Token Frame",
   "STL.Settings.FrameSrcHint": "The frame image composited behind and around the artwork in Selected Token Frame mode. Ignored in Dynamic Token Ring mode.",
 
+  "STL.Settings.RingMask": "Dynamic Ring Subject Mask",
+  "STL.Settings.RingMaskHint": "Clips artwork to the dynamic ring's inner circle, so a square portrait does not spill outside the ring. Defaults to Tokenizer 2's circle mask. Clear this only if your art is already circular with a transparent background. Dynamic Token Ring mode only.",
+
+  "STL.Settings.ThumbnailSize": "Browser Thumbnail Size",
+  "STL.Settings.ThumbnailSizeHint": "How large token images appear in the library browser. Larger sizes show fewer per row.",
+
   "STL.Settings.RingScale": "Ring Subject Scale",
   "STL.Settings.RingScaleHint": "How large the artwork sits inside the dynamic ring. Dynamic Token Ring mode only.",
   "STL.Settings.RingColor": "Ring Colour",
@@ -50,12 +56,18 @@
   "STL.Browser.NoCategories": "No categories yet. Add one, or drop art into the library's art folder.",
   "STL.Browser.NoImages": "No images match the current filter.",
   "STL.Browser.NoFacets": "This category has no traits to filter on yet.",
+  "STL.Browser.NoFacetsButUntagged": "None of this category's images are tagged yet. Select some below and assign traits to make them filterable.",
+  "STL.Browser.Untagged": "untagged",
+  "STL.Browser.Selected": "Selected",
+  "STL.Browser.SelectAll": "Select All Matching",
+  "STL.Browser.ClearSelection": "Clear Selection",
+  "STL.Browser.SelectHint": "Click a thumbnail to pin it; ctrl- or shift-click to select several for tagging.",
   "STL.Browser.Matching": "Matching",
   "STL.Browser.ClearFilters": "Clear",
   "STL.Browser.EditCategory": "Edit category",
   "STL.Browser.AddCategory": "Add Category",
   "STL.Browser.AddImages": "Add Images",
-  "STL.Browser.BakeSet": "Bake Set",
+  "STL.Browser.BakeSet": "Process Set",
   "STL.Browser.ApplyToTokens": "Apply to Selected",
   "STL.Browser.ApplyToActor": "Apply to Actor",
   "STL.Browser.LoadMore": "Load more",
@@ -106,8 +118,16 @@
   "STL.Import.NothingQueued": "No images queued.",
   "STL.Import.NoTokenizer": "Tokenizer 2 is not available. Images will be added as-is; frame compositing is unavailable.",
 
-  "STL.Bake.Title": "Baking Composites",
-  "STL.Bake.Frame": "Frame",
+  "STL.Tag.Assign": "Assign traits",
+  "STL.Tag.Keep": "— keep —",
+  "STL.Tag.Clear": "— clear —",
+  "STL.Tag.Apply": "Apply to Selected",
+  "STL.Tag.Applied": "Tagged {count} image(s).",
+  "STL.Tag.NothingChosen": "Choose a trait value to assign first.",
+  "STL.Tag.NoFacets": "No traits are defined yet. Add one to start tagging.",
+
+  "STL.Bake.Title": "Processing Images",
+  "STL.Bake.Frame": "Variant",
   "STL.Bake.Written": "Written",
   "STL.Bake.Skipped": "Already present",
   "STL.Bake.FailedCount": "Failed",
@@ -128,5 +148,7 @@
 
   "STL.Info.AppliedToTokens": "Applied library art to {count} token(s).",
   "STL.Info.AppliedToActor": "Applied library art to {name}.",
-  "STL.Info.AlreadyBaked": "Every image in this selection is already baked."
+  "STL.Info.AppliedToActorAndTokens": "Applied library art to {name} and {count} placed token(s).",
+  "STL.Info.AlreadyBaked": "Every image in this selection is already processed.",
+  "STL.Info.NoProcessingNeeded": "The current settings need no processing — the artwork is used as-is."
 }

@@ -202,16 +202,29 @@
   min-height: 0;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 6px;
+  /* Track size is driven from the thumbnailSize setting, applied to the app
+     element in TokenLibraryBrowser#_onRender. */
+  grid-template-columns: repeat(auto-fill, minmax(var(--stl-thumb-size, 256px), 1fr));
+  gap: 8px;
   padding: 10px 12px;
   align-content: start;
 }
 
+/*
+ * Core CSS (@layer elements.forms) gives every <button> a fixed
+ * `height: var(--button-size)` plus `min-height`. With aspect-ratio: 1 that
+ * collapsed the thumbnails to ~30px squares, because the width was being
+ * derived from that height. Module CSS is unlayered so it already outranks the
+ * layered rule -- it just has to actually set the sizing properties.
+ */
 .stl-thumb {
   position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
   aspect-ratio: 1;
-  padding: 2px;
+  padding: 3px;
   border: 2px solid transparent;
   border-radius: var(--stl-radius);
   background: var(--stl-bg-item);
@@ -234,13 +247,55 @@
   display: block;
 }
 
-.stl-thumb-lock {
+.stl-thumb-badge {
   position: absolute;
-  right: 3px;
-  bottom: 3px;
-  font-size: 0.65rem;
-  opacity: 0.55;
+  bottom: 4px;
+  font-size: 0.7rem;
+  opacity: 0.6;
+  right: 4px;
 }
+
+.stl-thumb-untagged {
+  right: auto;
+  left: 4px;
+  color: var(--stl-accent);
+  opacity: 0.75;
+}
+
+/* ── Selection + tagging ──────────────────────────────────────────────────── */
+
+.stl-selection-bar,
+.stl-tag-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--stl-border);
+}
+
+.stl-selection-count { flex: 1; font-size: 0.85rem; }
+
+.stl-tag-panel { background: var(--stl-bg-item); }
+
+.stl-tag-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--stl-text-secondary);
+}
+
+.stl-tag-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+
+.stl-tag-field select { width: auto; min-width: 8rem; }
+
+.stl-hint-inline { font-size: 0.8rem; color: var(--stl-text-secondary); }
+.stl-untagged { color: var(--stl-accent); }
 
 .stl-load-more {
   margin: 0 12px 8px;

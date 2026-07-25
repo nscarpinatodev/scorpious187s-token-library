@@ -31,7 +31,7 @@ persistent storage (`modules/scorpious187s-token-library/storage`):
 ```
 manifest.json                              categories, traits, image tags
 art/<category>/<file>.webp                 borderless subject art
-baked/<frameId>/<category>/<file>.webp     frame-mode composites (a cache)
+baked/<variantId>/<category>/<file>.webp   processed variants (a cache)
 frames/<file>.webp                         your frame images
 ```
 
@@ -64,19 +64,33 @@ on the next rescan, and their traits are **inferred from the filename** —
 `commoner-human-female-01.webp` is tagged `race: human, gender: female`
 automatically. The manifest always wins where it disagrees.
 
+Inference only helps when filenames actually say something, which AI-generated
+names usually do not. For those, select thumbnails in the browser (ctrl- or
+shift-click for several, or **Select All Matching**) and assign traits from the
+tag panel. Untagged images are flagged with a tag icon so they are easy to find.
+
 ## Ring modes
 
-**Dynamic Token Ring** — Foundry draws the ring. The artwork goes straight into
-`texture.src` and `ring.enabled` is turned on. `ring.subject.texture` is
-deliberately left blank, because Foundry only overrides the ring's subject mesh
-when that field is set; leaving it empty means the ring wraps whatever image was
-actually chosen. That is what lets randomised art keep its ring. Costs nothing.
+**Dynamic Token Ring** — Foundry draws the ring. `ring.enabled` is turned on and
+`ring.subject.texture` is deliberately left blank, because Foundry only
+overrides the ring's subject mesh when that field is set; leaving it empty means
+the ring wraps whatever image was actually chosen. That is what lets randomised
+art keep its ring.
+
+The artwork is first clipped to the ring's inner circle, using Tokenizer 2's
+circle mask by default — a square portrait dropped straight into a dynamic ring
+spills outside it. If your art is already circular on a transparent background,
+clear the **Dynamic Ring Subject Mask** setting and the raw file is used as-is
+with no processing at all.
 
 **Selected Token Frame** — the artwork is composited onto your chosen frame by
 Tokenizer 2 and the flat result becomes the token texture, with the dynamic ring
-off. This produces a real file per image per frame, so applying a whole filtered
-set needs a one-time **Bake Set** pass. The browser tells you when that is
-pending.
+off.
+
+Both modes therefore write a processed file per image, under
+`baked/<variantId>/`. Applying a whole filtered set needs a one-time **Process
+Set** pass; the browser tells you when that is pending. These files are pure
+cache — deleting them only costs a re-run.
 
 ## How art gets picked
 

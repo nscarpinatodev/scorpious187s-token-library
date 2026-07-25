@@ -1,6 +1,6 @@
 {{!--
   Token library browser.
-  Categories left, filters + grid right, actions along the bottom.
+  Categories left, filters + grid right, tag panel and actions along the bottom.
 --}}
 <div class="stl-layout">
 
@@ -57,13 +57,22 @@
               </div>
             </div>
           {{else}}
-            <p class="stl-hint">{{localize "STL.Browser.NoFacets"}}</p>
+            <p class="stl-hint">
+              {{#if untagged}}
+                {{localize "STL.Browser.NoFacetsButUntagged"}}
+              {{else}}
+                {{localize "STL.Browser.NoFacets"}}
+              {{/if}}
+            </p>
           {{/each}}
         </div>
 
         <div class="stl-filter-actions">
           <span class="stl-match-count">
             {{localize "STL.Browser.Matching"}}: <strong>{{matchCount}}</strong>
+            {{#if untagged}}
+              · <span class="stl-untagged">{{untagged}} {{localize "STL.Browser.Untagged"}}</span>
+            {{/if}}
           </span>
           {{#if hasFilter}}
             <button type="button" data-action="clearFilters">
@@ -93,7 +102,8 @@
                 data-path="{{this.path}}"
                 data-tooltip="{{this.tooltip}}">
           <img src="{{this.path}}" alt="{{this.filename}}" loading="lazy">
-          {{#if this.readOnly}}<i class="fas fa-lock stl-thumb-lock"></i>{{/if}}
+          {{#if this.readOnly}}<i class="fas fa-lock stl-thumb-badge"></i>{{/if}}
+          {{#if this.untagged}}<i class="fas fa-tag stl-thumb-badge stl-thumb-untagged"></i>{{/if}}
         </button>
       {{else}}
         <p class="stl-empty">{{localize "STL.Browser.NoImages"}}</p>
@@ -106,9 +116,53 @@
       </button>
     {{/if}}
 
+    {{#if isGM}}
+      <div class="stl-selection-bar">
+        <span class="stl-selection-count">
+          {{#if selectedCount}}
+            {{localize "STL.Browser.Selected"}}: <strong>{{selectedCount}}</strong>
+          {{else}}
+            <span class="stl-hint-inline">{{localize "STL.Browser.SelectHint"}}</span>
+          {{/if}}
+        </span>
+        <button type="button" data-action="selectAll">{{localize "STL.Browser.SelectAll"}}</button>
+        {{#if selectedCount}}
+          <button type="button" data-action="clearSelection">{{localize "STL.Browser.ClearSelection"}}</button>
+        {{/if}}
+      </div>
+
+      {{#if selectedCount}}
+        <div class="stl-tag-panel">
+          {{#if hasTagFacets}}
+            <span class="stl-tag-label">{{localize "STL.Tag.Assign"}}</span>
+            {{#each tagFacets}}
+              <label class="stl-tag-field">
+                <span>{{this.label}}</span>
+                <select data-tag-facet="{{this.id}}">
+                  <option value="__keep__">{{localize "STL.Tag.Keep"}}</option>
+                  <option value="__clear__">{{localize "STL.Tag.Clear"}}</option>
+                  {{#each this.values}}
+                    <option value="{{this}}">{{this}}</option>
+                  {{/each}}
+                </select>
+              </label>
+            {{/each}}
+            <button type="button" class="stl-primary" data-action="applyTags">
+              <i class="fas fa-tags"></i> {{localize "STL.Tag.Apply"}}
+            </button>
+          {{else}}
+            <span class="stl-hint-inline">{{localize "STL.Tag.NoFacets"}}</span>
+            <button type="button" data-action="editCategory">
+              <i class="fas fa-plus"></i> {{localize "STL.Category.AddFacet"}}
+            </button>
+          {{/if}}
+        </div>
+      {{/if}}
+    {{/if}}
+
     <footer class="stl-actions">
       <span class="stl-mode" data-tooltip="{{localize 'STL.Browser.ModeHint'}}">
-        <i class="fas fa-circle-notch"></i> {{modeLabel}}{{#if frameName}} — {{frameName}}{{/if}}
+        <i class="fas fa-circle-notch"></i> {{modeLabel}}{{#if variantLabel}} — {{variantLabel}}{{/if}}
       </span>
 
       <div class="stl-action-buttons">
@@ -116,7 +170,7 @@
           <button type="button" data-action="addImages">
             <i class="fas fa-file-import"></i> {{localize "STL.Browser.AddImages"}}
           </button>
-          {{#if (stl-eq mode "frame")}}
+          {{#if needsProcessing}}
             <button type="button" data-action="bakeSet">
               <i class="fas fa-fire"></i> {{localize "STL.Browser.BakeSet"}}
             </button>

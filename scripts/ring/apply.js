@@ -7,7 +7,8 @@
  *             is left BLANK on purpose: ring.mjs only overrides the subject
  *             mesh when that field is truthy, so leaving it empty makes the
  *             ring wrap whatever texture.src resolved to. That is what lets a
- *             randomised wildcard keep its ring.
+ *             randomised wildcard keep its ring. The art itself is clipped to
+ *             the ring's circle first (see ring/bake.js).
  *
  *   frame   — the art is composited onto the chosen frame ahead of time and the
  *             flat result becomes texture.src, with the dynamic ring off.
@@ -16,7 +17,7 @@
 import { SETTINGS, RING_MODES, MODULE_ID, FLAGS } from '../constants.js';
 import { get, resolveRingEffects } from '../settings.js';
 import { globFor, images as libraryImages } from '../library/index.js';
-import { ensureBaked, bakedPathFor, pendingBakes } from './bake.js';
+import { ensureBaked, variantPathFor, pendingBakes, currentVariant } from './bake.js';
 import { saveSelection } from '../library/matching.js';
 import { log } from '../logger.js';
 
@@ -51,18 +52,17 @@ export function ringFields() {
 }
 
 /**
- * Resolve the texture path to use for an image under the current mode.
- * In frame mode this bakes the composite if it does not exist yet.
- * @returns {Promise<string|null>}
+ * Resolve the texture path to use for an image under the current settings,
+ * producing the processed variant if it does not exist yet.
+ * @returns {Promise<string>}
  */
 export async function texturePathFor(image) {
-  if (ringMode() !== RING_MODES.FRAME) return image.path;
-  const baked = await ensureBaked(image);
-  if (!baked) {
-    log.warn(`no baked composite for ${image.path}; falling back to the raw art`);
+  const processed = await ensureBaked(image);
+  if (!processed) {
+    log.warn(`no processed variant for ${image.path}; falling back to the raw art`);
     return image.path;
   }
-  return baked;
+  return processed;
 }
 
 /**
@@ -80,6 +80,37 @@ export async function updateForImage(image, { prefix = '' } = {}) {
 }
 
 /**
+ * Resolve what an "apply to actor" should actually write to.
+ *
+ * A token for an unlinked actor exposes a *synthetic* actor built from the
+ * token's ActorDelta. Writing `prototypeToken.*` to that synthetic document
+ * changes nothing anyone can see, which is why applying used to appear to work
+ * for linked PCs and silently do nothing for NPCs. Always resolve back to the
+ * world actor for prototype writes, and update the token itself separately.
+ *
+ * @param {Actor} actor
+ * @returns {{worldActor: Actor|null, tokenDocument: TokenDocument|null}}
+ */
+export function resolveActorTarget(actor) {
+  if (!actor) return { worldActor: null, tokenDocument: null };
+
+  if (actor.isToken) {
+    const tokenDocument = actor.token ?? null;
+    // baseActor is the world actor the token was created from.
+    const worldActor = tokenDocument?.baseActor ?? game.actors.get(actor.id) ?? null;
+    return { worldActor, tokenDocument };
+  }
+
+  return { worldActor: actor, tokenDocument: null };
+}
+
+/** Every placed token on the current scene backed by this world actor. */
+function placedTokensFor(worldActor) {
+  if (!worldActor || !canvas?.scene) return [];
+  return canvas.scene.tokens.filter(t => (t.baseActor?.id ?? t.actorId) === worldActor.id);
+}
+
+/**
  * Apply an image to already-placed tokens.
  * @param {TokenDocument[]} tokenDocuments
  * @param {object} image
@@ -91,17 +122,23 @@ export async function applyToTokens(tokenDocuments, image, { varyPerToken = fals
   const docs = tokenDocuments.filter(Boolean);
   if (!docs.length) return [];
 
-  const updates = [];
+  // Group by scene: a selection can legitimately span scenes via the API.
+  const byScene = new Map();
   for (const doc of docs) {
     const chosen = (varyPerToken && pool?.length)
       ? pool[Math.floor(Math.random() * pool.length)]
       : image;
-    updates.push({ _id: doc.id, ...(await updateForImage(chosen)) });
+    const update = { _id: doc.id, ...(await updateForImage(chosen)) };
+    if (!doc.parent) continue;
+    if (!byScene.has(doc.parent)) byScene.set(doc.parent, []);
+    byScene.get(doc.parent).push(update);
   }
 
-  const scene = docs[0].parent;
-  if (!scene) return [];
-  return scene.updateEmbeddedDocuments('Token', updates);
+  const results = [];
+  for (const [scene, updates] of byScene) {
+    results.push(...await scene.updateEmbeddedDocuments('Token', updates));
+  }
+  return results;
 }
 
 /**
@@ -116,8 +153,18 @@ export async function applyToTokens(tokenDocuments, image, { varyPerToken = fals
  *
  * @param {Actor} actor
  * @param {{categoryId: string, facets: Record<string,string[]>, file: string|null}} selection
+ * @param {object} [options]
+ * @param {boolean} [options.updatePlaced=true] Also retexture this actor's
+ *        existing tokens on the current scene. Unlinked tokens do not inherit
+ *        prototype changes, so without this an NPC appears unaffected.
  */
-export async function applyToActor(actor, selection) {
+export async function applyToActor(actor, selection, { updatePlaced = true } = {}) {
+  const { worldActor, tokenDocument } = resolveActorTarget(actor);
+  if (!worldActor) {
+    ui.notifications?.warn(game.i18n.localize('STL.Warn.NoActor'));
+    return null;
+  }
+
   const { categoryId, facets = {}, file = null } = selection;
 
   const pool = libraryImages(categoryId, facets);
@@ -141,26 +188,44 @@ export async function applyToActor(actor, selection) {
     update['prototypeToken.randomImg'] = false;
   }
 
-  await actor.update(update);
-  await saveSelection(actor, { categoryId, facets, file });
-  log.debug(`applied ${categoryId} to "${actor.name}"${glob ? ` as wildcard ${glob}` : ''}`);
-  return update;
+  await worldActor.update(update);
+  await saveSelection(worldActor, { categoryId, facets, file });
+
+  // Bring existing tokens in line. Linked tokens follow the prototype on their
+  // own; unlinked ones each hold their own texture and must be written.
+  let touched = 0;
+  if (updatePlaced) {
+    const placed = tokenDocument ? [tokenDocument] : placedTokensFor(worldActor);
+    const unlinked = placed.filter(t => !t.actorLink);
+    if (unlinked.length) {
+      await applyToTokens(unlinked, representative, { varyPerToken: !pinned, pool });
+      touched = unlinked.length;
+    }
+  }
+
+  log.debug(
+    `applied ${categoryId} to "${worldActor.name}"`
+    + `${glob ? ` as wildcard ${glob}` : ''}${touched ? `, retextured ${touched} placed token(s)` : ''}`,
+  );
+  return { update, touched };
 }
 
 /**
  * The native wildcard path for a selection, or null when one cannot represent it.
- * In frame mode the glob has to point at the baked directory, which means the
- * whole set must already be baked.
+ * When processing applies, the glob has to point at the variant directory,
+ * which means the whole set must already be processed.
  */
 async function wildcardFor(categoryId, facets, pool) {
   const glob = globFor(categoryId, facets);
   if (!glob) return null;
-  if (ringMode() !== RING_MODES.FRAME) return glob;
+
+  const variant = currentVariant();
+  if (!variant) return glob; // Raw art is what tokens actually use.
 
   const pending = await pendingBakes(pool);
-  if (pending.length) return null; // caller should bake first
+  if (pending.length) return null; // Caller should process the set first.
 
-  const sample = bakedPathFor(pool[0]);
+  const sample = variantPathFor(pool[0], variant);
   const dir = sample.slice(0, sample.lastIndexOf('/'));
   const ext = sample.slice(sample.lastIndexOf('.') + 1);
   return `${dir}/*.${ext}`;
@@ -168,6 +233,8 @@ async function wildcardFor(categoryId, facets, pool) {
 
 /** Clear a library assignment from an actor. */
 export async function clearActor(actor) {
-  await saveSelection(actor, null);
-  return actor.unsetFlag(MODULE_ID, FLAGS.AUTO_APPLIED);
+  const { worldActor } = resolveActorTarget(actor);
+  if (!worldActor) return null;
+  await saveSelection(worldActor, null);
+  return worldActor.unsetFlag(MODULE_ID, FLAGS.AUTO_APPLIED);
 }

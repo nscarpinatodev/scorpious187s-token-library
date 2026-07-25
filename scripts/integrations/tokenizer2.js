@@ -44,26 +44,45 @@ export function requireTokenizer(feature) {
 }
 
 /**
- * Composite an art image onto a frame and return the result as a Blob.
+ * Composite an art image and return the result as a Blob.
  *
  * This is the actorless path — exportLayers() takes a layer stack and hands
- * back {blob, dataURL}, which is exactly what bulk baking needs.
+ * back {blob, dataURL}, which is exactly what bulk processing needs.
  *
- * @param {string} artSrc   Full path to the borderless subject art.
- * @param {string} frameSrc Full path to the frame image.
+ * Both presentation modes come through here:
+ *   • frame mode passes a frameSrc, which is stacked over the art;
+ *   • dynamic-ring mode passes a maskSrc, which clips the art to the ring's
+ *     inner circle so a square portrait does not spill outside the ring.
+ *     Tokenizer's own auto-tokenize does the same thing — it hands `maskSrc`
+ *     to tokenize() alongside forceDynamicRing.
+ *
+ * @param {string} artSrc Full path to the source artwork.
  * @param {object} [options]
+ * @param {string|null} [options.frameSrc]  Frame stacked above the art.
+ * @param {string|null} [options.maskSrc]   Mask clipping the art.
  * @param {number} [options.exportSize]
- * @param {string} [options.exportFormat] "webp" | "png"
+ * @param {string} [options.exportFormat]   "webp" | "png"
  * @returns {Promise<Blob>}
  */
-export async function compositeToBlob(artSrc, frameSrc, { exportSize, exportFormat } = {}) {
+export async function compositeToBlob(artSrc, { frameSrc = null, maskSrc = null, exportSize, exportFormat } = {}) {
   const tokenizer = api();
   if (!tokenizer) throw new Error('Tokenizer 2 is not available');
 
-  const layers = [
-    tokenizer.createImageLayer(artSrc, 'Art'),
-    tokenizer.createImageLayer(frameSrc, 'Frame'),
-  ];
+  const art = tokenizer.createImageLayer(artSrc, 'Art');
+
+  if (maskSrc) {
+    // Tokenizer's layer masks are {id, type, src, ringConfig}; "custom" is the
+    // general image-mask type its own applyCustomMasks() uses.
+    art.masks.push({
+      id: foundry.utils.randomID(),
+      type: 'custom',
+      src: maskSrc,
+      ringConfig: null,
+    });
+  }
+
+  const layers = [art];
+  if (frameSrc) layers.push(tokenizer.createImageLayer(frameSrc, 'Frame'));
 
   const { blob } = await tokenizer.exportLayers(layers, { exportSize, exportFormat });
   if (!blob) throw new Error(`compositing produced no output for ${artSrc}`);

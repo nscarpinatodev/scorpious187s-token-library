@@ -49,8 +49,12 @@ export function framesDir() {
   return join(root(), DIRS.FRAMES);
 }
 
-export function bakedDir(frameId, categoryId = '') {
-  return join(root(), DIRS.BAKED, frameId, categoryId);
+/**
+ * Output directory for a processed image variant.
+ * @param {string} variantId e.g. "frame-brass-ring" or "ring-dynamic-ring-circle-mask"
+ */
+export function bakedDir(variantId, categoryId = '') {
+  return join(root(), DIRS.BAKED, variantId, categoryId);
 }
 
 /**
@@ -62,14 +66,6 @@ export function frameIdFor(frameSrc) {
   const base = trimSlashes(frameSrc).split('/').pop() ?? '';
   const slug = slugify(base.replace(/\.\w+$/, ''));
   return slug || 'default';
-}
-
-/**
- * Where a category's art image gets its baked counterpart under the given frame.
- * Extension is swapped to the configured export format by the caller.
- */
-export function bakedPathFor(frameId, categoryId, filename) {
-  return join(bakedDir(frameId, categoryId), filename);
 }
 
 /** Lowercase, hyphenated, filesystem-safe identifier. */
