@@ -36,19 +36,30 @@ function haystack(filename) {
 }
 
 /**
- * Infer facet values for a filename.
+ * Infer trait values for a filename.
+ *
+ * A filename can legitimately name several values of one trait, so every match
+ * is kept rather than just the first.
+ *
  * @param {string} filename
  * @param {Array<{id: string, values: string[]}>} facets
- * @returns {Record<string, string>} Only facets that matched.
+ * @returns {Record<string, string[]>} Only traits that matched.
  */
 export function inferFacets(filename, facets) {
   const hay = haystack(filename);
   const inferred = {};
   for (const facet of facets ?? []) {
-    // Longest value first, so "half-elf" wins over "elf".
+    // Longest value first, so "half-elf" is consumed before "elf" can match it.
     const values = [...(facet.values ?? [])].sort((a, b) => b.length - a.length);
-    const match = values.find(value => hay.includes(`-${slugify(value)}-`));
-    if (match !== undefined) inferred[facet.id] = match;
+    const matched = [];
+    let remaining = hay;
+    for (const value of values) {
+      const needle = `-${slugify(value)}-`;
+      if (!remaining.includes(needle)) continue;
+      matched.push(value);
+      remaining = remaining.replace(needle, '-');
+    }
+    if (matched.length) inferred[facet.id] = matched;
   }
   return inferred;
 }

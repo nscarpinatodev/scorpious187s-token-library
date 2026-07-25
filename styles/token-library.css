@@ -65,6 +65,14 @@
   color: var(--stl-text-secondary);
 }
 
+.stl-empty-toggle {
+  margin: 0 6px 6px;
+  font-size: 0.75rem;
+  color: var(--stl-text-secondary);
+  background: transparent;
+  border: 1px solid var(--stl-border);
+}
+
 .stl-categories {
   flex: 1;
   min-height: 0;
@@ -292,7 +300,20 @@
 
 .stl-selection-count { flex: 1; font-size: 0.85rem; }
 
-.stl-tag-panel { background: var(--stl-bg-item); }
+.stl-tag-panel {
+  background: var(--stl-bg-item);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  max-height: 40%;
+  overflow-y: auto;
+}
+
+.stl-tag-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
 
 .stl-tag-label {
   font-size: 0.75rem;
@@ -301,14 +322,33 @@
   color: var(--stl-text-secondary);
 }
 
-.stl-tag-field {
+.stl-tag-row {
   display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.8rem;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.stl-tag-field select { width: auto; min-width: 8rem; }
+.stl-tag-name {
+  flex: 0 0 110px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--stl-text-secondary);
+}
+
+/* A trait staged for writing, so it is obvious which ones Apply will touch. */
+.stl-tag-row.touched .stl-tag-name {
+  color: var(--stl-accent);
+  font-weight: 600;
+}
+
+.stl-tag-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
 
 .stl-hint-inline { font-size: 0.8rem; color: var(--stl-text-secondary); }
 .stl-untagged { color: var(--stl-accent); }

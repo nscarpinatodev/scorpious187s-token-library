@@ -66,8 +66,30 @@ automatically. The manifest always wins where it disagrees.
 
 Inference only helps when filenames actually say something, which AI-generated
 names usually do not. For those, select thumbnails in the browser (ctrl- or
-shift-click for several, or **Select All Matching**) and assign traits from the
-tag panel. Untagged images are flagged with a tag icon so they are easy to find.
+shift-click for several, or **Select All Matching**) and tick trait values in
+the tag panel. Untagged images are flagged with a tag icon so they are easy to
+find.
+
+An image can hold **several values of the same trait** — a token that reads as
+both a guard and a soldier can carry both, and will surface under either filter.
+Traits you don't touch in the panel are left exactly as they are, so tagging
+Race never disturbs Gender.
+
+## Categories vs traits
+
+Categories are **roles** — Guard, Bandit, Acolyte. Traits are everything else —
+race, gender, age, build, environment. That split matters: one pool of guard art
+usually has to serve elves and dwarves alike, and splitting the pool by species
+instead would mean re-cutting it every time a new species turns up.
+
+The **starter set** button in the sidebar adds 69 common D&D and Pathfinder NPC
+categories with their name aliases, plus seven traits and their values. It only
+fills in what is missing, so it is safe to run on an existing library and safe
+to run twice. **Hide empty** collapses the categories you have no art for yet.
+
+You do not have to use traits at all. Categories alone give you "drop a
+Commoner, get a random commoner"; traits only earn their keep when one category
+needs to serve visibly different actors.
 
 ## Ring modes
 

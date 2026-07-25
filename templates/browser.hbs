@@ -31,10 +31,23 @@
         <button type="button" data-action="addCategory">
           <i class="fas fa-plus"></i> {{localize "STL.Browser.AddCategory"}}
         </button>
+        <button type="button" data-action="seedDefaults"
+                data-tooltip="{{localize 'STL.Browser.SeedDefaultsHint'}}">
+          <i class="fas fa-list-check"></i>
+        </button>
         <button type="button" data-action="refresh" data-tooltip="{{localize 'STL.Browser.RefreshHint'}}">
           <i class="fas fa-rotate"></i>
         </button>
       </footer>
+      {{#if emptyCount}}
+        <button type="button" class="stl-empty-toggle" data-action="toggleEmpty">
+          {{#if hideEmpty}}
+            <i class="fas fa-eye"></i> {{localize "STL.Browser.ShowEmpty"}} ({{emptyCount}})
+          {{else}}
+            <i class="fas fa-eye-slash"></i> {{localize "STL.Browser.HideEmpty"}} ({{emptyCount}})
+          {{/if}}
+        </button>
+      {{/if}}
     {{/if}}
   </aside>
 
@@ -143,22 +156,44 @@
       {{#if selectedCount}}
         <div class="stl-tag-panel">
           {{#if hasTagFacets}}
-            <span class="stl-tag-label">{{localize "STL.Tag.Assign"}}</span>
+            <div class="stl-tag-head">
+              <span class="stl-tag-label">{{localize "STL.Tag.Assign"}}</span>
+              <span class="stl-hint-inline">{{localize "STL.Tag.Hint"}}</span>
+            </div>
+
             {{#each tagFacets}}
-              <label class="stl-tag-field">
-                <span>{{this.label}}</span>
-                <select data-tag-facet="{{this.id}}">
-                  <option value="__keep__">{{localize "STL.Tag.Keep"}}</option>
-                  <option value="__clear__">{{localize "STL.Tag.Clear"}}</option>
+              <div class="stl-tag-row{{#if this.touched}} touched{{/if}}">
+                <span class="stl-tag-name">
+                  {{this.label}}
+                  {{#if this.touched}}<i class="fas fa-pen" data-tooltip="{{localize 'STL.Tag.WillWrite'}}"></i>{{/if}}
+                </span>
+                <div class="stl-chips">
                   {{#each this.values}}
-                    <option value="{{this}}">{{this}}</option>
+                    <button type="button"
+                            class="stl-chip{{#if this.selected}} selected{{/if}}"
+                            data-action="toggleTagValue"
+                            data-facet-id="{{../id}}"
+                            data-value="{{this.value}}">{{this.value}}</button>
+                  {{else}}
+                    <span class="stl-hint-inline">{{localize "STL.Tag.NoValues"}}</span>
                   {{/each}}
-                </select>
-              </label>
+                </div>
+              </div>
             {{/each}}
-            <button type="button" class="stl-primary" data-action="applyTags">
-              <i class="fas fa-tags"></i> {{localize "STL.Tag.Apply"}}
-            </button>
+
+            <div class="stl-tag-actions">
+              <button type="button" data-action="editCategory">
+                <i class="fas fa-plus"></i> {{localize "STL.Category.AddFacet"}}
+              </button>
+              {{#if tagsTouched}}
+                <button type="button" data-action="resetTags">{{localize "STL.Tag.Reset"}}</button>
+              {{/if}}
+              <button type="button" class="stl-primary" data-action="applyTags"
+                      {{#unless tagsTouched}}disabled{{/unless}}>
+                <i class="fas fa-tags"></i>
+                {{localize "STL.Tag.Apply"}} ({{selectedCount}})
+              </button>
+            </div>
           {{else}}
             <span class="stl-hint-inline">{{localize "STL.Tag.NoFacets"}}</span>
             <button type="button" data-action="editCategory">

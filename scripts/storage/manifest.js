@@ -74,12 +74,34 @@ export function normalize(raw) {
           // createDirectory and upload), and the directory scan would re-add
           // anything still on disk, so removal has to be recorded here.
           removed: image.removed === true,
-          facets: (image.facets && typeof image.facets === 'object') ? { ...image.facets } : {},
+          facets: normalizeImageFacets(image.facets),
         })),
     });
   }
 
   return manifest;
+}
+
+/**
+ * An image's traits, always as arrays.
+ *
+ * One trait held one value originally, which made "this token is both a guard
+ * and a soldier" unexpressible. Older manifests wrote plain strings, so those
+ * are widened here rather than migrated — the file is rewritten in the new
+ * shape the next time anything is saved.
+ *
+ * @returns {Record<string, string[]>}
+ */
+function normalizeImageFacets(facets) {
+  const out = {};
+  if (!facets || typeof facets !== 'object') return out;
+  for (const [facetId, raw] of Object.entries(facets)) {
+    const values = [...new Set(
+      (Array.isArray(raw) ? raw : [raw]).map(v => String(v ?? '').trim()).filter(Boolean),
+    )];
+    if (values.length) out[facetId] = values;
+  }
+  return out;
 }
 
 /** Read the GM overlay. Returns an empty manifest when none exists yet. */

@@ -14,7 +14,7 @@ import {
 } from './constants.js';
 import { registerSettings, noteCurrentPath } from './settings.js';
 import {
-  build, categories, category, imageCount, announceReady, isBuilt,
+  build, categories, category, imageCount, announceReady, isBuilt, seedDefaults,
 } from './library/index.js';
 import { matchCategory, savedSelection } from './library/matching.js';
 import { applyToActor, applyToTokens, ringMode } from './ring/apply.js';
@@ -110,7 +110,7 @@ Hooks.once('ready', async () => {
     TokenLibraryBrowser,
     CategoryEditor,
     ImportDialog,
-    library: { build, categories, category, imageCount, isBuilt },
+    library: { build, categories, category, imageCount, isBuilt, seedDefaults },
     matching: { matchCategory, savedSelection },
     apply: { applyToActor, applyToTokens, ringMode },
     storage: { ensureLibraryTree, relocate: runWithProgress },

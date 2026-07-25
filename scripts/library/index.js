@@ -84,9 +84,9 @@ export function facetsFor(categoryId) {
   if (!cat) return [];
   const present = new Map();
   for (const image of cat.images) {
-    for (const [facetId, value] of Object.entries(image.facets)) {
+    for (const [facetId, values] of Object.entries(image.facets)) {
       if (!present.has(facetId)) present.set(facetId, new Set());
-      present.get(facetId).add(value);
+      for (const value of values) present.get(facetId).add(value);
     }
   }
   return state.facets
@@ -105,8 +105,10 @@ export function facetsFor(categoryId) {
 /**
  * Images in a category matching a facet filter.
  *
- * A filter entry with no selected values is ignored. An image that carries no
- * value for a filtered facet cannot satisfy it and is excluded.
+ * A filter entry with no selected values is ignored. Within one trait the
+ * selected values are OR-ed and an image needs any of them; across traits they
+ * are AND-ed. An image carrying no value at all for a filtered trait cannot
+ * satisfy it and is excluded.
  *
  * @param {string} categoryId
  * @param {Record<string, string[]>} [filter]
@@ -117,8 +119,10 @@ export function images(categoryId, filter = {}) {
   if (!cat) return [];
   const active = Object.entries(filter).filter(([, values]) => values?.length);
   if (!active.length) return cat.images;
-  return cat.images.filter(image =>
-    active.every(([facetId, values]) => values.includes(image.facets[facetId])));
+  return cat.images.filter(image => active.every(([facetId, wanted]) => {
+    const held = image.facets[facetId];
+    return Array.isArray(held) && held.some(value => wanted.includes(value));
+  }));
 }
 
 /** A random image from a filtered set, or null when the set is empty. */
@@ -378,10 +382,13 @@ export function draftOverlay() {
  * only way those images ever become filterable. Images discovered by the
  * directory scan have no manifest entry yet, so one is created here.
  *
+ * Only the traits named in `assignments` are touched; anything else the images
+ * already carry is left alone, so tagging one trait never wipes another.
+ *
  * @param {string} categoryId
- * @param {string[]} paths        Full paths of the images to tag.
- * @param {Record<string,string>} assignments  facetId → value. An empty string
- *        clears that facet on the selected images.
+ * @param {string[]} paths  Full paths of the images to tag.
+ * @param {Record<string,string[]>} assignments  facetId → values. An empty
+ *        array clears that trait on the selected images.
  */
 export async function setImageFacets(categoryId, paths, assignments) {
   const cat = category(categoryId);
@@ -391,19 +398,21 @@ export async function setImageFacets(categoryId, paths, assignments) {
   const entry = ensureOverlayCategory(draft, categoryId);
   const targets = new Set(paths);
 
-  // Any new value must exist on its facet, or the filter chips will not offer it.
-  for (const [facetId, value] of Object.entries(assignments)) {
-    if (!value) continue;
+  // Any new value must exist on its trait, or the filter chips will not offer it.
+  for (const [facetId, values] of Object.entries(assignments)) {
+    if (!values?.length) continue;
     const facet = ensureOverlayFacet(draft, facetId);
-    if (!facet.values.includes(value)) facet.values.push(value);
+    for (const value of values) {
+      if (!facet.values.includes(value)) facet.values.push(value);
+    }
   }
 
   for (const image of cat.images) {
     if (!targets.has(image.path)) continue;
     if (image.readOnly) continue; // Art-pack images are not ours to rewrite.
     const record = overlayRecordFor(entry, image);
-    for (const [facetId, value] of Object.entries(assignments)) {
-      if (value) record.facets[facetId] = value;
+    for (const [facetId, values] of Object.entries(assignments)) {
+      if (values?.length) record.facets[facetId] = [...new Set(values)];
       else delete record.facets[facetId];
     }
   }
@@ -480,6 +489,53 @@ export async function restoreRemoved(categoryId) {
 
   await commit(draft);
   log.log(`restored ${restored} removed image(s) in "${categoryId}"`);
+}
+
+/**
+ * Merge the shipped D&D/Pathfinder starter set into the overlay.
+ *
+ * Purely additive: an existing category keeps its label and gains only match
+ * names it does not already have, and existing trait values are never removed.
+ * Running it twice is a no-op, so it is safe to offer as a button rather than a
+ * one-shot first-run migration.
+ *
+ * @returns {Promise<{categories: number, facets: number}>} How much was added.
+ */
+export async function seedDefaults() {
+  const { DEFAULT_CATEGORIES, DEFAULT_FACETS } = await import('../data/default-categories.js');
+  const draft = draftOverlay();
+
+  let addedCategories = 0;
+  let addedFacets = 0;
+
+  for (const facet of DEFAULT_FACETS) {
+    const entry = ensureOverlayFacet(draft, facet.id, facet.label);
+    for (const value of facet.values) {
+      if (!entry.values.includes(value)) {
+        entry.values.push(value);
+        addedFacets++;
+      }
+    }
+  }
+
+  for (const preset of DEFAULT_CATEGORIES) {
+    const known = category(preset.id);
+    const entry = ensureOverlayCategory(draft, preset.id);
+    if (!known) {
+      entry.label = preset.label;
+      addedCategories++;
+    }
+    for (const name of preset.names) {
+      if (!entry.match.names.includes(name)) entry.match.names.push(name);
+    }
+    for (const type of preset.creatureTypes ?? []) {
+      if (!entry.match.creatureTypes.includes(type)) entry.match.creatureTypes.push(type);
+    }
+  }
+
+  await commit(draft);
+  log.log(`seeded defaults: ${addedCategories} new categories, ${addedFacets} new trait values`);
+  return { categories: addedCategories, facets: addedFacets };
 }
 
 /** Announce that the library is queryable. Called once from main.js. */

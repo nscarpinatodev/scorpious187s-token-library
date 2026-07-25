@@ -18,7 +18,7 @@ import { MODULE_ID, RING_MODES, SETTINGS } from '../constants.js';
 import { get } from '../settings.js';
 import {
   categories, category, facets as allFacets, facetsFor, images as libraryImages,
-  imageCount, isBuilt, build, setImageFacets, removeImages, restoreRemoved,
+  imageCount, isBuilt, build, setImageFacets, removeImages, restoreRemoved, seedDefaults,
 } from '../library/index.js';
 import { libApi } from '../integrations/lib.js';
 import { encodePath } from '../storage/paths.js';
@@ -45,7 +45,9 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       selectImage:     TokenLibraryBrowser.#onSelectImage,
       selectAll:       TokenLibraryBrowser.#onSelectAll,
       clearSelection:  TokenLibraryBrowser.#onClearSelection,
+      toggleTagValue:  TokenLibraryBrowser.#onToggleTagValue,
       applyTags:       TokenLibraryBrowser.#onApplyTags,
+      resetTags:       TokenLibraryBrowser.#onResetTags,
       removeImages:    TokenLibraryBrowser.#onRemoveImages,
       restoreRemoved:  TokenLibraryBrowser.#onRestoreRemoved,
       applyToTokens:   TokenLibraryBrowser.#onApplyToTokens,
@@ -56,6 +58,8 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       addCategory:     TokenLibraryBrowser.#onAddCategory,
       editCategory:    TokenLibraryBrowser.#onEditCategory,
       refresh:         TokenLibraryBrowser.#onRefresh,
+      seedDefaults:    TokenLibraryBrowser.#onSeedDefaults,
+      toggleEmpty:     TokenLibraryBrowser.#onToggleEmpty,
     },
   };
 
@@ -75,6 +79,15 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
   #filter = {};
   /** @type {Set<string>} Selected image paths. */
   #selection = new Set();
+  /**
+   * Pending trait edits, keyed by trait id. A trait only appears here once the
+   * GM has clicked one of its chips — untouched traits are left exactly as they
+   * are, so tagging Race never disturbs Gender.
+   * @type {Map<string, Set<string>>}
+   */
+  #tagDraft = new Map();
+  /** Hide categories with no art — useful once the starter set is seeded. */
+  #hideEmpty = false;
   #visible = PAGE_SIZE;
 
   get categoryId() {
@@ -117,7 +130,11 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       actor: this.actor,
       totalImages: imageCount(),
       thumbSize: Number(get(SETTINGS.THUMBNAIL_SIZE)) || 256,
-      categories: categories().map(c => ({
+      emptyCount: categories().filter(c => !c.images.length).length,
+      hideEmpty: this.#hideEmpty,
+      categories: categories()
+        .filter(c => !this.#hideEmpty || c.images.length || c.id === this.categoryId)
+        .map(c => ({
         id: c.id,
         label: c.label,
         count: c.images.length,
@@ -154,8 +171,9 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       // The tag panel offers every trait defined anywhere, not just the ones
       // already present here — otherwise a category of untagged art could never
       // get its first trait.
-      tagFacets: allFacets().map(f => ({ id: f.id, label: f.label, values: f.values })),
+      tagFacets: this.#tagPanelContext(),
       hasTagFacets: allFacets().length > 0,
+      tagsTouched: this.#tagDraft.size > 0,
       mode,
       modeLabel: game.i18n.localize(
         mode === RING_MODES.FRAME ? 'STL.Settings.RingModeFrame' : 'STL.Settings.RingModeDynamic',
@@ -165,6 +183,39 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       needsFrame: mode === RING_MODES.FRAME && !variant,
       selectedTokens: canvas?.tokens?.controlled?.length ?? 0,
     };
+  }
+
+  /**
+   * Trait rows for the tag panel.
+   *
+   * A trait the GM has not touched shows the values the selected images already
+   * share, so the panel reads as "what these images are" rather than starting
+   * blank. Those values are shown but not staged: only touched traits are
+   * written on apply.
+   */
+  #tagPanelContext() {
+    const selected = this.matches.filter(image => this.#selection.has(image.path));
+
+    return allFacets().map(facet => {
+      const touched = this.#tagDraft.has(facet.id);
+      const staged = this.#tagDraft.get(facet.id);
+
+      // Values held by every selected image, when nothing has been staged yet.
+      const common = selected.length
+        ? (selected[0].facets[facet.id] ?? []).filter(value =>
+            selected.every(image => (image.facets[facet.id] ?? []).includes(value)))
+        : [];
+
+      return {
+        id: facet.id,
+        label: facet.label,
+        touched,
+        values: facet.values.map(value => ({
+          value,
+          selected: touched ? staged.has(value) : common.includes(value),
+        })),
+      };
+    });
   }
 
   /** Drive the grid's track size from the setting. */
@@ -179,6 +230,7 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     this.#categoryId = target.dataset.categoryId;
     this.#filter = {};
     this.#selection.clear();
+    this.#tagDraft.clear();
     this.#visible = PAGE_SIZE;
     this.render();
   }
@@ -211,39 +263,69 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     } else {
       this.#selection = new Set([path]);
     }
+    this.#tagDraft.clear();
     this.render();
   }
 
   static #onSelectAll() {
     this.#selection = new Set(this.matches.map(i => i.path));
+    this.#tagDraft.clear();
     this.render();
   }
 
   static #onClearSelection() {
     this.#selection.clear();
+    this.#tagDraft.clear();
     this.render();
   }
 
-  /** Write the tag panel's trait values onto the selected images. */
-  static async #onApplyTags() {
-    if (!this.#selection.size) return;
+  /**
+   * Stage a trait value. The first click on a trait promotes it from "leave
+   * alone" to "edit", seeded with whatever the selection already shares, so
+   * toggling one value does not silently drop the others.
+   */
+  static #onToggleTagValue(event, target) {
+    const { facetId, value } = target.dataset;
 
-    const assignments = {};
-    for (const select of this.element.querySelectorAll('[data-tag-facet]')) {
-      const value = select.value;
-      if (value === '__keep__') continue;      // leave this trait alone
-      assignments[select.dataset.tagFacet] = value === '__clear__' ? '' : value;
+    if (!this.#tagDraft.has(facetId)) {
+      const selected = this.matches.filter(image => this.#selection.has(image.path));
+      const common = selected.length
+        ? (selected[0].facets[facetId] ?? []).filter(v =>
+            selected.every(image => (image.facets[facetId] ?? []).includes(v)))
+        : [];
+      this.#tagDraft.set(facetId, new Set(common));
     }
 
-    if (!Object.keys(assignments).length) {
+    const staged = this.#tagDraft.get(facetId);
+    if (staged.has(value)) staged.delete(value);
+    else staged.add(value);
+    this.render();
+  }
+
+  /** Write the staged trait values onto the selected images. */
+  static async #onApplyTags() {
+    if (!this.#selection.size) return;
+    if (!this.#tagDraft.size) {
       ui.notifications?.warn(game.i18n.localize('STL.Tag.NothingChosen'));
       return;
     }
 
+    // Only touched traits are sent; an emptied trait is cleared.
+    const assignments = Object.fromEntries(
+      [...this.#tagDraft].map(([facetId, values]) => [facetId, [...values]]),
+    );
+
     const paths = [...this.#selection];
     await setImageFacets(this.categoryId, paths, assignments);
+    this.#tagDraft.clear();
     ui.notifications?.info(game.i18n.format('STL.Tag.Applied', { count: paths.length }));
     log.log(`tagged ${paths.length} image(s) in "${this.categoryId}"`);
+    this.render();
+  }
+
+  /** Discard staged trait edits without touching the images. */
+  static #onResetTags() {
+    this.#tagDraft.clear();
     this.render();
   }
 
@@ -377,6 +459,18 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     this.render();
   }
 
+  /** Merge the shipped D&D/Pathfinder starter categories and traits. */
+  static async #onSeedDefaults() {
+    const added = await seedDefaults();
+    ui.notifications?.info(game.i18n.format('STL.Browser.SeededDefaults', added));
+    this.render();
+  }
+
+  static #onToggleEmpty() {
+    this.#hideEmpty = !this.#hideEmpty;
+    this.render();
+  }
+
   /** Called by the editors once they have committed a change. */
   async refresh(categoryId = null) {
     if (categoryId) this.#categoryId = categoryId;
@@ -397,7 +491,7 @@ async function confirmDialog(title, content) {
 
 /** Human-readable trait summary for a thumbnail tooltip. */
 function describeImage(image) {
-  const parts = Object.values(image.facets);
+  const parts = Object.values(image.facets).flat();
   return parts.length ? `${image.filename}\n${parts.join(' · ')}` : image.filename;
 }
 
