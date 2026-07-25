@@ -17,6 +17,7 @@ export const SETTINGS = Object.freeze({
   FRAME_SRC:      'frameSrc',
   MASK_MODE:      'maskMode',
   RING_MASK:      'ringMask',
+  SUBJECT_FIT:    'subjectFit',
   RING_SCALE:     'ringScale',
   RING_COLOR:     'ringColor',
   RING_BACKGROUND:'ringBackground',
@@ -68,11 +69,27 @@ export const MASK_MODES = Object.freeze({
 export const SUBJECT_THICKNESS = 0.6666666;
 
 /**
+ * How source artwork is framed into the square before it is clipped.
+ *
+ * This matters more than it sounds. Art is clipped to a circle covering two
+ * thirds of the token, so fitting a tall full-body portrait whole means the
+ * circle lands somewhere around the midriff. COVER_TOP fills the square and
+ * keeps the top, which is where a portrait's face is — the right default for
+ * character art. CONTAIN is only correct when the source is already framed as
+ * a square bust.
+ */
+export const SUBJECT_FITS = Object.freeze({
+  COVER_TOP: 'cover-top',
+  COVER:     'cover',
+  CONTAIN:   'contain',
+});
+
+/**
  * Bumped whenever the compositing maths changes, and folded into every variant
  * id. Output from an older version lands in a different directory rather than
  * being silently reused, so a fix actually reaches existing libraries.
  */
-export const COMPOSITE_VERSION = 3;
+export const COMPOSITE_VERSION = 4;
 
 /** Actor/token flags on this module's namespace. */
 export const FLAGS = Object.freeze({

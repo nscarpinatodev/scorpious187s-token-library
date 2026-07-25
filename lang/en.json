@@ -17,6 +17,12 @@
   "STL.Settings.FrameSrc": "Token Frame",
   "STL.Settings.FrameSrcHint": "The frame image composited behind and around the artwork in Selected Token Frame mode. Ignored in Dynamic Token Ring mode.",
 
+  "STL.Settings.SubjectFit": "Subject Framing",
+  "STL.Settings.SubjectFitHint": "How source artwork is framed before clipping. Art is clipped to a circle covering two thirds of the token, so fitting a tall full-body portrait whole lands that circle around the midriff. Fill from the top keeps the face.",
+  "STL.Settings.SubjectFitCoverTop": "Fill, keep the top (best for full-body art)",
+  "STL.Settings.SubjectFitCover": "Fill, keep the centre",
+  "STL.Settings.SubjectFitContain": "Fit the whole image (art is already a square bust)",
+
   "STL.Settings.MaskMode": "Subject Clipping",
   "STL.Settings.MaskModeHint": "How artwork is clipped before a ring or frame is applied. A square portrait dropped straight into a dynamic ring spills outside it, so clipping is on by default.",
   "STL.Settings.MaskModeCircle": "Circle (built in)",

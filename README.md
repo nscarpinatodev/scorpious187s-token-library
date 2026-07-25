@@ -60,9 +60,25 @@ categories, and which traits each image has:
 ```
 
 You rarely need to touch it. Images dropped into `art/<category>/` are picked up
-on the next rescan, and their traits are **inferred from the filename** —
-`commoner-human-female-01.webp` is tagged `race: human, gender: female`
-automatically. The manifest always wins where it disagrees.
+on the next rescan, and their traits come from two places automatically.
+
+**Subfolders are traits** — the cheapest way to tag a generated batch:
+
+```
+art/commoner/elf/female/01.png     → race: elf, gender: female
+art/guard/dwarf/male/elderly/2.png → race: dwarf, gender: male, age: elderly
+```
+
+Folder names are matched against known trait values, so nesting order does not
+matter, and folders matching nothing (`batch-2`, `raw`) are treated as plain
+organisation and ignored.
+
+**Filenames are also read** — `commoner-human-female-01.webp` is tagged
+`race: human, gender: female`. Folders win over filenames, and the manifest wins
+over both.
+
+See [docs/PROMPTS.md](docs/PROMPTS.md) for generating art with ChatGPT,
+including prompt fragments for every starter category.
 
 Inference only helps when filenames actually say something, which AI-generated
 names usually do not. For those, select thumbnails in the browser (ctrl- or

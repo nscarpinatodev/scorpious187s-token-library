@@ -19,7 +19,7 @@
  * its frame browser); it is simply no longer in the bulk-processing path.
  */
 
-import { MASK_MODES, SUBJECT_THICKNESS } from '../constants.js';
+import { MASK_MODES, SUBJECT_FITS, SUBJECT_THICKNESS } from '../constants.js';
 import { encodePath } from '../storage/paths.js';
 import { log } from '../logger.js';
 
@@ -40,16 +40,36 @@ export async function loadImage(src) {
   return image;
 }
 
-/** Draw an image centred and fitted inside a square, preserving aspect ratio. */
-function drawContain(ctx, image, size) {
+/**
+ * Draw an image into a square, preserving aspect ratio.
+ *
+ * `contain` fits the whole image; `cover` fills the square and crops the
+ * overflow; `cover-top` does the same but keeps the top edge, which is where a
+ * standing portrait's face is.
+ */
+function drawFitted(ctx, image, size, fit) {
   const w = image.naturalWidth || image.width;
   const h = image.naturalHeight || image.height;
   if (!w || !h) return;
 
-  const scale = Math.min(size / w, size / h);
-  const drawWidth = w * scale;
-  const drawHeight = h * scale;
-  ctx.drawImage(image, (size - drawWidth) / 2, (size - drawHeight) / 2, drawWidth, drawHeight);
+  if (fit === SUBJECT_FITS.CONTAIN) {
+    const scale = Math.min(size / w, size / h);
+    const dw = w * scale;
+    const dh = h * scale;
+    ctx.drawImage(image, (size - dw) / 2, (size - dh) / 2, dw, dh);
+    return;
+  }
+
+  const scale = Math.max(size / w, size / h);
+  const dw = w * scale;
+  const dh = h * scale;
+  ctx.drawImage(
+    image,
+    (size - dw) / 2,
+    fit === SUBJECT_FITS.COVER_TOP ? 0 : (size - dh) / 2,
+    dw,
+    dh,
+  );
 }
 
 /**
@@ -63,6 +83,7 @@ function drawContain(ctx, image, size) {
  * @param {string|null} [options.frameSrc]  Frame drawn over the clipped art.
  * @param {string} [options.maskMode]       'circle' | 'image' | 'none'
  * @param {string|null} [options.maskSrc]   Mask image, when maskMode is 'image'.
+ * @param {string} [options.fit]            'cover-top' | 'cover' | 'contain'
  * @param {number} [options.size=512]       Output edge length in pixels.
  * @param {string} [options.format='webp']  'webp' | 'png'
  * @returns {Promise<Blob>}
@@ -71,6 +92,7 @@ export async function composite(artSrc, {
   frameSrc = null,
   maskMode = MASK_MODES.CIRCLE,
   maskSrc = null,
+  fit = SUBJECT_FITS.COVER_TOP,
   size = 512,
   format = 'webp',
 } = {}) {
@@ -83,7 +105,7 @@ export async function composite(artSrc, {
   ctx.imageSmoothingQuality = 'high';
 
   const art = await loadImage(artSrc);
-  drawContain(ctx, art, size);
+  drawFitted(ctx, art, size, fit);
 
   // ── Clip the subject ─────────────────────────────────────────────────────
   if (maskMode === MASK_MODES.IMAGE && maskSrc) {

@@ -8,7 +8,7 @@
  */
 
 import {
-  MODULE_ID, SETTINGS, DEFAULT_ROOT, RING_MODES, HOOK_PATH_CHANGED, MASK_MODES,
+  MODULE_ID, SETTINGS, DEFAULT_ROOT, RING_MODES, HOOK_PATH_CHANGED, MASK_MODES, SUBJECT_FITS,
 } from './constants.js';
 
 /**
@@ -95,6 +95,20 @@ export function registerSettings() {
     type: String,
     filePicker: 'image',
     default: '',
+  });
+
+  game.settings.register(MODULE_ID, SETTINGS.SUBJECT_FIT, {
+    name: t('SubjectFit'),
+    hint: t('SubjectFitHint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      [SUBJECT_FITS.COVER_TOP]: t('SubjectFitCoverTop'),
+      [SUBJECT_FITS.COVER]:     t('SubjectFitCover'),
+      [SUBJECT_FITS.CONTAIN]:   t('SubjectFitContain'),
+    },
+    default: SUBJECT_FITS.COVER_TOP,
   });
 
   game.settings.register(MODULE_ID, SETTINGS.MASK_MODE, {

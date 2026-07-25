@@ -17,7 +17,7 @@
  * canvas composite plus one upload per image.
  */
 
-import { SETTINGS, RING_MODES, MASK_MODES, COMPOSITE_VERSION } from '../constants.js';
+import { SETTINGS, RING_MODES, MASK_MODES, SUBJECT_FITS, COMPOSITE_VERSION } from '../constants.js';
 import { get } from '../settings.js';
 import {
   bakedDir, frameIdFor, join, source, slugify, basename, decodePath, variantFilename,
@@ -58,6 +58,12 @@ export function maskSrc() {
   return decodePath(get(SETTINGS.RING_MASK) || '');
 }
 
+/** How source art is framed into the square, falling back to the safe default. */
+export function subjectFit() {
+  const configured = get(SETTINGS.SUBJECT_FIT);
+  return Object.values(SUBJECT_FITS).includes(configured) ? configured : SUBJECT_FITS.COVER_TOP;
+}
+
 /** How the subject should be clipped, falling back to CIRCLE for bad values. */
 export function maskMode() {
   const configured = get(SETTINGS.MASK_MODE);
@@ -96,15 +102,17 @@ export function currentVariant() {
     ? `img-${slugify(basename(maskSrc()).replace(/\.\w+$/, '')) || 'mask'}`
     : clip;
 
+  const fit = subjectFit();
   const parts = frame
-    ? [`frame-${frameIdFor(frame)}`, maskPart, `v${COMPOSITE_VERSION}`]
-    : [`ring-${maskPart}`, `v${COMPOSITE_VERSION}`];
+    ? [`frame-${frameIdFor(frame)}`, maskPart, fit, `v${COMPOSITE_VERSION}`]
+    : [`ring-${maskPart}`, fit, `v${COMPOSITE_VERSION}`];
   const labels = [frame ? basename(frame) : null, clip === MASK_MODES.IMAGE ? basename(maskSrc()) : clip]
     .filter(Boolean);
 
   return {
     id: parts.join('-'),
     frameSrc: frame || null,
+    fit,
     maskMode: clip,
     maskSrc: clip === MASK_MODES.IMAGE ? maskSrc() : null,
     label: labels.join(' + '),
@@ -215,6 +223,7 @@ export async function bakeImages(images, { onProgress, shouldStop, force = false
         frameSrc: variant.frameSrc,
         maskMode: variant.maskMode,
         maskSrc: variant.maskSrc,
+        fit: variant.fit,
         size: exportSize,
         format: exportFormat,
       });

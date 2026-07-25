@@ -135,7 +135,7 @@ Hooks.on('updateSetting', async (setting) => {
   if (!setting?.key?.startsWith(`${MODULE_ID}.`)) return;
   const key = setting.key.split('.').slice(1).join('.');
   const relevant = [
-    SETTINGS.FRAME_SRC, SETTINGS.MASK_MODE, SETTINGS.RING_MASK,
+    SETTINGS.FRAME_SRC, SETTINGS.MASK_MODE, SETTINGS.RING_MASK, SETTINGS.SUBJECT_FIT,
     SETTINGS.RING_MODE, SETTINGS.EXPORT_FORMAT,
   ];
   if (!relevant.includes(key)) return;

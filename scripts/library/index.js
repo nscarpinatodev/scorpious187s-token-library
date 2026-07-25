@@ -241,11 +241,21 @@ export async function build({ scan = true } = {}) {
   return state;
 }
 
+/** Guard against a runaway walk if someone nests art absurdly deep. */
+const MAX_SCAN_DEPTH = 6;
+
 /**
- * Pick up image files sitting in `art/<categoryId>/` that no manifest mentions.
- * Categories are created on the fly for unknown directories, and facets are
- * inferred from filenames, so a GM can populate the library by dropping folders
- * in and never opening the JSON.
+ * Pick up image files sitting under `art/<categoryId>/` that no manifest
+ * mentions. Categories are created on the fly for unknown directories, so a GM
+ * can populate the library by dropping folders in and never opening the JSON.
+ *
+ * Subfolders are traits. `art/commoner/elf/female/x.png` tags that image
+ * race: elf, gender: female, because each folder name is looked up against the
+ * known trait values. Folders that match nothing — `batch-2`, `raw` — are just
+ * organisation and are ignored, so nesting can never break a scan.
+ *
+ * This is the cheap way to tag a generated batch: sort on export, and the
+ * library reads the sorting.
  */
 async function scanArtDirectories(sources, removed = new Set()) {
   const scanRoots = [
@@ -279,25 +289,61 @@ async function scanArtDirectories(sources, removed = new Set()) {
       }
       if (!scanRoot.readOnly) cat.readOnly = false;
 
-      for (const path of await browseImages(scanRoot.source, dir)) {
-        if (removed.has(path)) {
-          if (!cat.removed.includes(path)) cat.removed.push(path);
-          continue;
-        }
-        if (cat.images.some(i => i.path === path)) continue;
-        const filename = basename(path);
-        cat.images.push({
-          path,
-          filename,
-          dir,
-          categoryId,
-          facets: inferFacets(filename, state.facets),
-          sourceId: scanRoot.id,
-          readOnly: scanRoot.readOnly,
-        });
-      }
+      await scanCategoryDir(scanRoot, dir, cat, removed, [], 0);
     }
   }
+}
+
+/** Walk one category directory and everything nested inside it. */
+async function scanCategoryDir(scanRoot, dir, cat, removed, trail, depth) {
+  const fromFolders = facetsFromTrail(trail);
+
+  for (const path of await browseImages(scanRoot.source, dir)) {
+    if (removed.has(path)) {
+      if (!cat.removed.includes(path)) cat.removed.push(path);
+      continue;
+    }
+    if (cat.images.some(i => i.path === path)) continue;
+
+    const filename = basename(path);
+    cat.images.push({
+      path,
+      filename,
+      dir,
+      categoryId: cat.id,
+      // Folders beat the filename: putting a file in a folder is deliberate,
+      // whereas a filename match can be a coincidence.
+      facets: { ...inferFacets(filename, state.facets), ...fromFolders },
+      sourceId: scanRoot.id,
+      readOnly: scanRoot.readOnly,
+    });
+  }
+
+  if (depth >= MAX_SCAN_DEPTH) {
+    log.warn(`stopped scanning below ${dir} — nested more than ${MAX_SCAN_DEPTH} deep`);
+    return;
+  }
+
+  const { dirs } = await browse(scanRoot.source, dir);
+  for (const sub of dirs) {
+    await scanCategoryDir(scanRoot, sub, cat, removed, [...trail, basename(sub)], depth + 1);
+  }
+}
+
+/**
+ * Resolve a chain of folder names to trait values.
+ * Unrecognised names contribute nothing rather than becoming stray values.
+ * @param {string[]} trail
+ * @returns {Record<string, string[]>}
+ */
+function facetsFromTrail(trail) {
+  const resolved = {};
+  for (const segment of trail) {
+    for (const [facetId, values] of Object.entries(inferFacets(segment, state.facets))) {
+      resolved[facetId] = [...new Set([...(resolved[facetId] ?? []), ...values])];
+    }
+  }
+  return resolved;
 }
 
 /**
