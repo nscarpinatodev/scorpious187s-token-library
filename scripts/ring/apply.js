@@ -3,15 +3,25 @@
  *
  * Two presentation modes, one source image:
  *
- *   dynamic — Foundry draws its own ring around the art. `ring.subject.texture`
- *             is left BLANK on purpose: ring.mjs only overrides the subject
- *             mesh when that field is truthy, so leaving it empty makes the
- *             ring wrap whatever texture.src resolved to. That is what lets a
- *             randomised wildcard keep its ring. The art itself is clipped to
- *             the ring's circle first (see ring/bake.js).
+ *   dynamic — Foundry draws its own ring around the clipped art, which is set
+ *             as an EXPLICIT subject via ring.subject.texture.
+ *
+ *             An earlier version left that field blank so Foundry would wrap
+ *             whatever texture.src randomised to. Mechanically that works, but
+ *             it lands in ring.mjs's `!explicitSubject` branch — the auto-fit
+ *             path written for full-token images — and the subject ends up
+ *             painted over the ring band rather than inside it. Tokenizer 2's
+ *             own working patch sets subject.texture with subject.scale 1, so
+ *             we do the same.
+ *
+ *             The cost is that native randomImg wildcards cannot vary a dynamic
+ *             ring: #configureTexture swaps the mesh texture for the subject,
+ *             so every randomised token would show the same art. Dynamic mode
+ *             therefore always rolls per token in hooks/auto-apply.js instead.
  *
  *   frame   — the art is composited onto the chosen frame ahead of time and the
- *             flat result becomes texture.src, with the dynamic ring off.
+ *             flat result becomes texture.src, with the dynamic ring off. Here
+ *             native wildcards work fine.
  */
 
 import { SETTINGS, RING_MODES, MODULE_ID, FLAGS } from '../constants.js';
@@ -34,16 +44,20 @@ function colorOrNull(value) {
 
 /**
  * The ring-related fields for the current mode, unprefixed.
+ * @param {string} src The resolved texture path this token will use.
  * @returns {Record<string, unknown>}
  */
-export function ringFields() {
+export function ringFields(src) {
   if (ringMode() === RING_MODES.FRAME) {
-    return { 'ring.enabled': false };
+    return {
+      'ring.enabled': false,
+      'ring.subject.texture': null,
+    };
   }
   return {
     'ring.enabled': true,
-    // Intentionally blank — see the module comment above.
-    'ring.subject.texture': '',
+    // Explicit subject — see the module comment above.
+    'ring.subject.texture': src,
     'ring.subject.scale': Number(get(SETTINGS.RING_SCALE)) || 1,
     'ring.colors.ring': colorOrNull(get(SETTINGS.RING_COLOR)),
     'ring.colors.background': colorOrNull(get(SETTINGS.RING_BACKGROUND)),
@@ -75,7 +89,7 @@ export async function texturePathFor(image) {
 export async function updateForImage(image, { prefix = '' } = {}) {
   const src = await texturePathFor(image);
   const update = { [`${prefix}texture.src`]: src };
-  for (const [key, value] of Object.entries(ringFields())) update[`${prefix}${key}`] = value;
+  for (const [key, value] of Object.entries(ringFields(src))) update[`${prefix}${key}`] = value;
   return update;
 }
 
@@ -216,6 +230,11 @@ export async function applyToActor(actor, selection, { updatePlaced = true } = {
  * which means the whole set must already be processed.
  */
 async function wildcardFor(categoryId, facets, pool) {
+  // A dynamic ring pins its own subject texture, so randomImg would randomise
+  // texture.src while every token still rendered the same subject. Roll per
+  // token instead (hooks/auto-apply.js).
+  if (ringMode() !== RING_MODES.FRAME) return null;
+
   const glob = globFor(categoryId, facets);
   if (!glob) return null;
 

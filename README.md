@@ -71,14 +71,16 @@ tag panel. Untagged images are flagged with a tag icon so they are easy to find.
 
 ## Ring modes
 
-**Dynamic Token Ring** — Foundry draws the ring. `ring.enabled` is turned on and
-`ring.subject.texture` is deliberately left blank, because Foundry only
-overrides the ring's subject mesh when that field is set; leaving it empty means
-the ring wraps whatever image was actually chosen. That is what lets randomised
-art keep its ring.
+**Dynamic Token Ring** — Foundry draws the ring, and the clipped artwork is
+handed to it as an explicit subject via `ring.subject.texture` with
+`ring.subject.scale` at 1, matching what Tokenizer 2 writes for its own dynamic
+ring tokens.
 
-The artwork is first clipped to a circle — a square portrait dropped straight
-into a dynamic ring spills outside it. **Subject Clipping** controls this:
+The artwork is clipped to a circle sized to **two thirds** of the token, which
+is the subject size Foundry's rings are built around (`TokenRing`'s
+`#defaultSubjectThickness`). A full-bleed image reaches the token's edge and
+covers the ring band instead of sitting inside it. **Subject Clipping** controls
+this:
 
 | Mode | Behaviour |
 |---|---|
@@ -108,10 +110,15 @@ everything to regenerate.
    token artwork, so deliberate portraits are never overwritten.
 3. **Nothing.** The token is left alone.
 
-When a filter happens to select every image in a single folder, the actor gets a
-native Foundry wildcard (`randomImg`), which keeps working even if this module is
-later disabled. Arbitrary trait filters have no glob equivalent, so those are
-stored on the actor and rolled at token-creation time instead.
+In **frame** mode, when a filter happens to select every image in a single
+folder, the actor gets a native Foundry wildcard (`randomImg`), which keeps
+working even if this module is later disabled. Arbitrary trait filters have no
+glob equivalent, so those are stored on the actor and rolled at token-creation
+time instead.
+
+**Dynamic ring** mode always rolls per token. A dynamic ring pins its own
+subject texture, so `randomImg` would randomise `texture.src` while every token
+still rendered the same subject — variety has to come from this module.
 
 ## Adding art
 

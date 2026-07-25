@@ -57,6 +57,23 @@ export const MASK_MODES = Object.freeze({
   NONE:   'none',
 });
 
+/**
+ * How much of the token a dynamic ring's subject is meant to fill.
+ *
+ * Foundry's own value — TokenRing.#defaultSubjectThickness in
+ * client/canvas/placeables/tokens/ring.mjs. A subject drawn any larger reaches
+ * the token's edge and covers the ring band instead of sitting inside it.
+ * Tokenizer 2's dynamic-ring mask circle measures the same ~2/3.
+ */
+export const SUBJECT_THICKNESS = 0.6666666;
+
+/**
+ * Bumped whenever the compositing maths changes, and folded into every variant
+ * id. Output from an older version lands in a different directory rather than
+ * being silently reused, so a fix actually reaches existing libraries.
+ */
+export const COMPOSITE_VERSION = 2;
+
 /** Actor/token flags on this module's namespace. */
 export const FLAGS = Object.freeze({
   /** The GM's saved browser selection: {categoryId, facets, file|null, wildcard}. */

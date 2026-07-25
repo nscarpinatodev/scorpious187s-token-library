@@ -30,7 +30,7 @@
   "STL.Settings.ThumbnailSizeHint": "How large token images appear in the library browser. Larger sizes show fewer per row.",
 
   "STL.Settings.RingScale": "Ring Subject Scale",
-  "STL.Settings.RingScaleHint": "How large the artwork sits inside the dynamic ring. Dynamic Token Ring mode only.",
+  "STL.Settings.RingScaleHint": "How large the artwork sits inside the dynamic ring. Leave at 1 unless your art needs it: processing already clips the subject to the size Foundry's rings expect, so lowering this shrinks the art away from the ring rather than fitting it. Dynamic Token Ring mode only.",
   "STL.Settings.RingColor": "Ring Colour",
   "STL.Settings.RingColorHint": "Hex colour for the dynamic ring, e.g. #c9a227. Leave blank to use the token's disposition colour.",
   "STL.Settings.RingBackground": "Ring Background Colour",

@@ -19,7 +19,7 @@
  * its frame browser); it is simply no longer in the bulk-processing path.
  */
 
-import { MASK_MODES } from '../constants.js';
+import { MASK_MODES, SUBJECT_THICKNESS } from '../constants.js';
 import { log } from '../logger.js';
 
 /**
@@ -90,12 +90,13 @@ export async function composite(artSrc, {
     ctx.globalCompositeOperation = 'destination-in';
     ctx.drawImage(mask, 0, 0, size, size);
   } else if (maskMode === MASK_MODES.CIRCLE) {
-    // A full-bleed inscribed circle. Foundry's ring.subject.scale then decides
-    // how large the subject sits inside the ring it draws.
+    // Sized to Foundry's ring geometry, NOT full bleed. Dynamic rings expect a
+    // subject filling SUBJECT_THICKNESS of the token; a full-bleed circle
+    // reaches the outer edge and paints straight over the ring band.
     ctx.globalCompositeOperation = 'destination-in';
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    ctx.arc(size / 2, size / 2, (size * SUBJECT_THICKNESS) / 2, 0, Math.PI * 2);
     ctx.fill();
   }
 

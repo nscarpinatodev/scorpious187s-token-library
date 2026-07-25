@@ -128,7 +128,10 @@ export function registerSettings() {
     config: true,
     type: Number,
     range: { min: 0.5, max: 1.5, step: 0.05 },
-    default: 0.8,
+    // 1 matches what Tokenizer 2 writes. The artwork is already clipped to the
+    // ring's subject size during processing, so scaling it again here shrinks
+    // it away from the ring rather than fitting it.
+    default: 1,
   });
 
   game.settings.register(MODULE_ID, SETTINGS.RING_COLOR, {

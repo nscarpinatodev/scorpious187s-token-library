@@ -17,7 +17,7 @@
  * canvas composite plus one upload per image.
  */
 
-import { SETTINGS, RING_MODES, MASK_MODES } from '../constants.js';
+import { SETTINGS, RING_MODES, MASK_MODES, COMPOSITE_VERSION } from '../constants.js';
 import { get } from '../settings.js';
 import {
   bakedDir, frameIdFor, join, swapExtension, source, slugify, basename,
@@ -82,7 +82,9 @@ export function currentVariant() {
     ? `img-${slugify(basename(maskSrc()).replace(/\.\w+$/, '')) || 'mask'}`
     : clip;
 
-  const parts = frame ? [`frame-${frameIdFor(frame)}`, maskPart] : [`ring-${maskPart}`];
+  const parts = frame
+    ? [`frame-${frameIdFor(frame)}`, maskPart, `v${COMPOSITE_VERSION}`]
+    : [`ring-${maskPart}`, `v${COMPOSITE_VERSION}`];
   const labels = [frame ? basename(frame) : null, clip === MASK_MODES.IMAGE ? basename(maskSrc()) : clip]
     .filter(Boolean);
 

@@ -79,7 +79,7 @@ function onPreCreateToken(document, data, options, userId) {
     return;
   }
 
-  const update = { 'texture.src': src, ...ringFields() };
+  const update = { 'texture.src': src, ...ringFields(src) };
   if (choice.source === 'match') {
     update[`flags.${MODULE_ID}.${FLAGS.AUTO_APPLIED}`] = true;
   }
