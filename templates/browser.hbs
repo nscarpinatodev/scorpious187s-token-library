@@ -101,7 +101,7 @@
                 data-action="selectImage"
                 data-path="{{this.path}}"
                 data-tooltip="{{this.tooltip}}">
-          <img src="{{this.path}}" alt="{{this.filename}}" loading="lazy">
+          <img src="{{this.src}}" alt="{{this.filename}}" loading="lazy">
           {{#if this.readOnly}}<i class="fas fa-lock stl-thumb-badge"></i>{{/if}}
           {{#if this.untagged}}<i class="fas fa-tag stl-thumb-badge stl-thumb-untagged"></i>{{/if}}
         </button>

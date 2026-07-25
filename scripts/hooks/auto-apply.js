@@ -21,6 +21,7 @@ import { isBuilt, images as libraryImages, randomImage } from '../library/index.
 import { savedSelection, matchCategory } from '../library/matching.js';
 import { ringFields, updateForImage } from '../ring/apply.js';
 import { variantPathFor, hasVariantSync, currentVariant } from '../ring/bake.js';
+import { encodePath } from '../storage/paths.js';
 import { log } from '../logger.js';
 
 /**
@@ -71,7 +72,8 @@ function onPreCreateToken(document, data, options, userId) {
   const choice = chooseImage(actor, document);
   if (!choice) return;
 
-  const src = syncTexturePath(choice.image);
+  // Encoded on the way into the document — see updateForImage().
+  const src = encodePath(syncTexturePath(choice.image) ?? '') || null;
   if (!src) {
     // Processed variant not ready — finish asynchronously after create.
     deferred.push({ actorId: actor.id, image: choice.image });

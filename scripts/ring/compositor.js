@@ -20,6 +20,7 @@
  */
 
 import { MASK_MODES, SUBJECT_THICKNESS } from '../constants.js';
+import { encodePath } from '../storage/paths.js';
 import { log } from '../logger.js';
 
 /**
@@ -34,7 +35,7 @@ import { log } from '../logger.js';
 export async function loadImage(src) {
   const image = new Image();
   image.crossOrigin = 'anonymous';
-  image.src = foundry.utils.getRoute(src);
+  image.src = foundry.utils.getRoute(encodePath(src));
   await image.decode();
   return image;
 }

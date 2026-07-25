@@ -28,6 +28,7 @@ import { SETTINGS, RING_MODES, MODULE_ID, FLAGS } from '../constants.js';
 import { get, resolveRingEffects } from '../settings.js';
 import { globFor, images as libraryImages } from '../library/index.js';
 import { ensureBaked, variantPathFor, pendingBakes, currentVariant } from './bake.js';
+import { encodePath } from '../storage/paths.js';
 import { saveSelection } from '../library/matching.js';
 import { log } from '../logger.js';
 
@@ -87,7 +88,10 @@ export async function texturePathFor(image) {
  * @returns {Promise<Record<string, unknown>>}
  */
 export async function updateForImage(image, { prefix = '' } = {}) {
-  const src = await texturePathFor(image);
+  // Encoded on the way into the document: Foundry stores URL-encoded paths in
+  // texture.src (which is why FilePicker.browse hands them back that way), and
+  // a raw space fails to resolve.
+  const src = encodePath(await texturePathFor(image));
   const update = { [`${prefix}texture.src`]: src };
   for (const [key, value] of Object.entries(ringFields(src))) update[`${prefix}${key}`] = value;
   return update;
@@ -239,7 +243,8 @@ async function wildcardFor(categoryId, facets, pool) {
   if (!glob) return null;
 
   const variant = currentVariant();
-  if (!variant) return glob; // Raw art is what tokens actually use.
+  if (!variant) return encodePath(glob.slice(0, glob.lastIndexOf('/')))
+    + glob.slice(glob.lastIndexOf('/')); // Raw art is what tokens actually use.
 
   const pending = await pendingBakes(pool);
   if (pending.length) return null; // Caller should process the set first.
@@ -247,7 +252,7 @@ async function wildcardFor(categoryId, facets, pool) {
   const sample = variantPathFor(pool[0], variant);
   const dir = sample.slice(0, sample.lastIndexOf('/'));
   const ext = sample.slice(sample.lastIndexOf('.') + 1);
-  return `${dir}/*.${ext}`;
+  return `${encodePath(dir)}/*.${ext}`;
 }
 
 /** Clear a library assignment from an actor. */

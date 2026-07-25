@@ -21,6 +21,7 @@ import {
   imageCount, isBuilt, build, setImageFacets, removeImages, restoreRemoved,
 } from '../library/index.js';
 import { libApi } from '../integrations/lib.js';
+import { encodePath } from '../storage/paths.js';
 import { savedSelection } from '../library/matching.js';
 import { applyToActor, applyToTokens, ringMode, resolveActorTarget } from '../ring/apply.js';
 import { pendingBakes, currentVariant, needsProcessing } from '../ring/bake.js';
@@ -135,7 +136,10 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       })),
       hasFilter: Object.values(this.#filter).some(v => v?.length),
       images: shown.map(image => ({
+        // `path` stays decoded — it is the identity key the selection and the
+        // library compare against. `src` is the encoded form for the <img>.
         path: image.path,
+        src: encodePath(image.path),
         filename: image.filename,
         tooltip: describeImage(image),
         selected: this.#selection.has(image.path),

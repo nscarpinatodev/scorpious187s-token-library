@@ -35,6 +35,25 @@ export function decodePath(path) {
   }
 }
 
+/**
+ * Percent-encode a path for use as a URL — document fields like texture.src,
+ * and `<img src>`.
+ *
+ * The counterpart to decodePath(). Internally the module works with real
+ * filenames, because that is what gets uploaded and what browse() comparisons
+ * need; anything handed to Foundry as an asset reference has to be encoded, per
+ * its own convention of storing encoded paths in texture.src.
+ *
+ * Each segment is decoded before being re-encoded, so calling this on an
+ * already-encoded path is a no-op rather than producing %2520.
+ */
+export function encodePath(path) {
+  return String(path ?? '')
+    .split('/')
+    .map(segment => encodeURIComponent(decodePath(segment)))
+    .join('/');
+}
+
 /** Strip leading/trailing slashes so joins never double up. */
 export function trimSlashes(path) {
   return String(path ?? '').replace(/^\/+|\/+$/g, '');
