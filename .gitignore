@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.claude/
+*.zip
+
+# Runtime library content. The seed manifest and sample art under
+# storage/art/_sample are tracked; everything a GM adds at runtime is not.
+storage/art/*
+!storage/art/_sample/
+storage/baked/
+storage/frames/*
+!storage/frames/.gitkeep
+storage/.relocate-state.json

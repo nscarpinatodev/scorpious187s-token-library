@@ -1,0 +1,29 @@
+<div class="stl-bake-body">
+  <p class="stl-bake-frame">
+    {{localize "STL.Bake.Frame"}}: <strong>{{frame}}</strong>
+  </p>
+
+  {{#if finished}}
+    <p class="stl-bake-summary">
+      {{#if cancelled}}<i class="fas fa-ban"></i> {{localize "STL.Bake.Cancelled"}}<br>{{/if}}
+      {{localize "STL.Bake.Written"}}: <strong>{{baked}}</strong> ·
+      {{localize "STL.Bake.Skipped"}}: <strong>{{skipped}}</strong> ·
+      {{localize "STL.Bake.FailedCount"}}: <strong>{{failed}}</strong>
+    </p>
+    <footer class="stl-bake-actions">
+      <button type="button" data-action="close">{{localize "STL.Common.Close"}}</button>
+    </footer>
+  {{else}}
+    <div class="stl-progress">
+      <div class="stl-progress-bar" style="width: {{percent}}%"></div>
+    </div>
+    <p class="stl-bake-status">
+      {{done}} / {{total}} — <span class="stl-bake-current">{{current}}</span>
+    </p>
+    <footer class="stl-bake-actions">
+      <button type="button" data-action="cancel" {{#if cancelled}}disabled{{/if}}>
+        <i class="fas fa-ban"></i> {{localize "STL.Common.Cancel"}}
+      </button>
+    </footer>
+  {{/if}}
+</div>

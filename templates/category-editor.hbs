@@ -1,0 +1,95 @@
+{{!-- Category details plus the shared facet/value editor (races live here). --}}
+<div class="stl-editor">
+
+  <fieldset class="stl-fieldset">
+    <legend>{{localize "STL.Category.Details"}}</legend>
+
+    <div class="form-group">
+      <label>{{localize "STL.Category.Label"}}</label>
+      <input type="text" name="label" value="{{label}}" placeholder="{{localize 'STL.Category.LabelPlaceholder'}}">
+    </div>
+
+    {{#if isNew}}
+      <div class="form-group">
+        <label>{{localize "STL.Category.Id"}}</label>
+        <input type="text" name="categoryId" value="{{categoryId}}"
+               placeholder="{{localize 'STL.Category.IdPlaceholder'}}">
+        <p class="hint">{{localize "STL.Category.IdHint"}}</p>
+      </div>
+    {{else}}
+      <p class="stl-meta">
+        <code>{{categoryId}}</code> — {{imageCount}} {{localize "STL.Category.Images"}}
+        {{#if readOnly}}<span class="stl-badge">{{localize "STL.Category.ReadOnly"}}</span>{{/if}}
+      </p>
+    {{/if}}
+
+    <div class="form-group">
+      <label>{{localize "STL.Category.MatchNames"}}</label>
+      <input type="text" name="names" value="{{names}}"
+             placeholder="{{localize 'STL.Category.MatchNamesPlaceholder'}}">
+      <p class="hint">{{localize "STL.Category.MatchNamesHint"}}</p>
+    </div>
+
+    <div class="form-group">
+      <label>{{localize "STL.Category.CreatureTypes"}}</label>
+      <input type="text" name="creatureTypes" value="{{creatureTypes}}"
+             placeholder="{{localize 'STL.Category.CreatureTypesPlaceholder'}}">
+      <p class="hint">{{localize "STL.Category.CreatureTypesHint"}}</p>
+    </div>
+  </fieldset>
+
+  <fieldset class="stl-fieldset">
+    <legend>{{localize "STL.Category.Facets"}}</legend>
+    <p class="hint">{{localize "STL.Category.FacetsHint"}}</p>
+
+    {{#each facets}}
+      <div class="stl-facet-row">
+        <div class="stl-facet-head">
+          <input type="text" name="facets.{{@index}}.id" value="{{this.id}}"
+                 placeholder="{{localize 'STL.Category.FacetId'}}" class="stl-facet-id">
+          <input type="text" name="facets.{{@index}}.label" value="{{this.label}}"
+                 placeholder="{{localize 'STL.Category.FacetLabel'}}">
+        </div>
+
+        <div class="stl-facet-values">
+          {{#each this.values}}
+            <span class="stl-chip stl-chip-static">
+              {{this}}
+              <button type="button" class="stl-chip-remove" data-action="removeFacetValue"
+                      data-index="{{@../index}}" data-value="{{this}}"
+                      data-tooltip="{{localize 'STL.Common.Remove'}}">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </span>
+          {{/each}}
+        </div>
+
+        {{!-- Hidden mirror so a re-render keeps values the chips represent. --}}
+        <input type="hidden" name="facets.{{@index}}.values" value="{{this.valuesText}}">
+
+        <div class="stl-facet-add">
+          <input type="text" data-new-value="{{@index}}"
+                 placeholder="{{localize 'STL.Category.NewValuePlaceholder'}}">
+          <button type="button" data-action="addFacetValue" data-index="{{@index}}">
+            <i class="fas fa-plus"></i> {{localize "STL.Category.AddValue"}}
+          </button>
+        </div>
+      </div>
+    {{/each}}
+
+    <button type="button" class="stl-add-facet" data-action="addFacet">
+      <i class="fas fa-plus"></i> {{localize "STL.Category.AddFacet"}}
+    </button>
+  </fieldset>
+
+  <footer class="stl-editor-actions">
+    {{#unless isNew}}
+      <button type="button" class="stl-danger" data-action="deleteCategory">
+        <i class="fas fa-trash"></i> {{localize "STL.Category.Delete"}}
+      </button>
+    {{/unless}}
+    <button type="submit" class="stl-primary">
+      <i class="fas fa-floppy-disk"></i> {{localize "STL.Common.Save"}}
+    </button>
+  </footer>
+</div>

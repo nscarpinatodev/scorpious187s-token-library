@@ -1,0 +1,135 @@
+{{!--
+  Token library browser.
+  Categories left, filters + grid right, actions along the bottom.
+--}}
+<div class="stl-layout">
+
+  <aside class="stl-sidebar">
+    <header class="stl-sidebar-header">
+      <span class="stl-sidebar-title">{{localize "STL.Browser.Categories"}}</span>
+      <span class="stl-count">{{totalImages}}</span>
+    </header>
+
+    <ul class="stl-categories">
+      {{#each categories}}
+        <li>
+          <button type="button"
+                  class="stl-category{{#if this.active}} active{{/if}}"
+                  data-action="selectCategory"
+                  data-category-id="{{this.id}}">
+            <span class="stl-category-label">{{this.label}}</span>
+            <span class="stl-count">{{this.count}}</span>
+          </button>
+        </li>
+      {{else}}
+        <li class="stl-empty">{{localize "STL.Browser.NoCategories"}}</li>
+      {{/each}}
+    </ul>
+
+    {{#if isGM}}
+      <footer class="stl-sidebar-footer">
+        <button type="button" data-action="addCategory">
+          <i class="fas fa-plus"></i> {{localize "STL.Browser.AddCategory"}}
+        </button>
+        <button type="button" data-action="refresh" data-tooltip="{{localize 'STL.Browser.RefreshHint'}}">
+          <i class="fas fa-rotate"></i>
+        </button>
+      </footer>
+    {{/if}}
+  </aside>
+
+  <section class="stl-main">
+
+    <header class="stl-filters">
+      {{#if category}}
+        <div class="stl-filter-rows">
+          {{#each facets}}
+            <div class="stl-filter-row">
+              <span class="stl-filter-label">{{this.label}}</span>
+              <div class="stl-chips">
+                {{#each this.values}}
+                  <button type="button"
+                          class="stl-chip{{#if this.selected}} selected{{/if}}"
+                          data-action="toggleFacet"
+                          data-facet-id="{{../id}}"
+                          data-value="{{this.value}}">{{this.value}}</button>
+                {{/each}}
+              </div>
+            </div>
+          {{else}}
+            <p class="stl-hint">{{localize "STL.Browser.NoFacets"}}</p>
+          {{/each}}
+        </div>
+
+        <div class="stl-filter-actions">
+          <span class="stl-match-count">
+            {{localize "STL.Browser.Matching"}}: <strong>{{matchCount}}</strong>
+          </span>
+          {{#if hasFilter}}
+            <button type="button" data-action="clearFilters">
+              <i class="fas fa-filter-circle-xmark"></i> {{localize "STL.Browser.ClearFilters"}}
+            </button>
+          {{/if}}
+          {{#if isGM}}
+            <button type="button" data-action="editCategory" data-tooltip="{{localize 'STL.Browser.EditCategory'}}">
+              <i class="fas fa-pen-to-square"></i>
+            </button>
+          {{/if}}
+        </div>
+      {{/if}}
+    </header>
+
+    {{#if needsFrame}}
+      <p class="stl-warning">
+        <i class="fas fa-triangle-exclamation"></i> {{localize "STL.Browser.NoFrameChosen"}}
+      </p>
+    {{/if}}
+
+    <div class="stl-grid">
+      {{#each images}}
+        <button type="button"
+                class="stl-thumb{{#if this.selected}} selected{{/if}}"
+                data-action="selectImage"
+                data-path="{{this.path}}"
+                data-tooltip="{{this.tooltip}}">
+          <img src="{{this.path}}" alt="{{this.filename}}" loading="lazy">
+          {{#if this.readOnly}}<i class="fas fa-lock stl-thumb-lock"></i>{{/if}}
+        </button>
+      {{else}}
+        <p class="stl-empty">{{localize "STL.Browser.NoImages"}}</p>
+      {{/each}}
+    </div>
+
+    {{#if hasMore}}
+      <button type="button" class="stl-load-more" data-action="loadMore">
+        {{localize "STL.Browser.LoadMore"}} ({{shownCount}} / {{matchCount}})
+      </button>
+    {{/if}}
+
+    <footer class="stl-actions">
+      <span class="stl-mode" data-tooltip="{{localize 'STL.Browser.ModeHint'}}">
+        <i class="fas fa-circle-notch"></i> {{modeLabel}}{{#if frameName}} — {{frameName}}{{/if}}
+      </span>
+
+      <div class="stl-action-buttons">
+        {{#if isGM}}
+          <button type="button" data-action="addImages">
+            <i class="fas fa-file-import"></i> {{localize "STL.Browser.AddImages"}}
+          </button>
+          {{#if (stl-eq mode "frame")}}
+            <button type="button" data-action="bakeSet">
+              <i class="fas fa-fire"></i> {{localize "STL.Browser.BakeSet"}}
+            </button>
+          {{/if}}
+        {{/if}}
+        <button type="button" data-action="applyToTokens" {{#unless selectedTokens}}disabled{{/unless}}>
+          <i class="fas fa-bullseye"></i> {{localize "STL.Browser.ApplyToTokens"}} ({{selectedTokens}})
+        </button>
+        <button type="button" class="stl-primary" data-action="applyToActor">
+          <i class="fas fa-user-check"></i> {{localize "STL.Browser.ApplyToActor"}}
+        </button>
+      </div>
+    </footer>
+
+  </section>
+</div>

@@ -1,0 +1,434 @@
+/*
+ * Scorpious187's Token Library
+ *
+ * Colours come from the family theme. scorpious187s-lib mirrors the canonical
+ * --s187-* variables onto our --stl-* prefix (see theming/theme-registry.js), so
+ * every value below falls back to the canonical name and then to a sane default
+ * for the case where the lib is not driving the theme.
+ */
+
+.stl {
+  --stl-bg-primary:      var(--s187-bg-primary, #1b1b1f);
+  --stl-bg-secondary:    var(--s187-bg-secondary, #232329);
+  --stl-bg-item:         var(--s187-bg-item, #2c2c34);
+  --stl-bg-item-hover:   var(--s187-bg-item-hover, #35353f);
+  --stl-text-primary:    var(--s187-text-primary, #e8e8ec);
+  --stl-text-secondary:  var(--s187-text-secondary, #a0a0ac);
+  --stl-accent:          var(--s187-accent, #c9a227);
+  --stl-accent-hover:    var(--s187-accent-hover, #e0b53c);
+  --stl-border:          var(--s187-border, #3a3a44);
+  --stl-radius:          var(--s187-radius, 4px);
+  --stl-font-body:       var(--s187-font-body, inherit);
+
+  color: var(--stl-text-primary);
+  font-family: var(--stl-font-body);
+}
+
+/* ── Browser layout ───────────────────────────────────────────────────────── */
+
+.stl-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+.stl-sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--stl-bg-primary);
+  border-right: 1px solid var(--stl-border);
+}
+
+.stl-sidebar-header,
+.stl-sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--stl-border);
+}
+
+.stl-sidebar-footer {
+  border-bottom: none;
+  border-top: 1px solid var(--stl-border);
+}
+
+.stl-sidebar-title {
+  flex: 1;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--stl-text-secondary);
+}
+
+.stl-categories {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+.stl-categories li { margin: 0; }
+
+.stl-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: var(--stl-radius);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stl-category:hover { background: var(--stl-bg-item-hover); }
+
+.stl-category.active {
+  background: var(--stl-bg-item);
+  box-shadow: inset 3px 0 0 var(--stl-accent);
+}
+
+.stl-category-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stl-count {
+  font-size: 0.72rem;
+  color: var(--stl-text-secondary);
+  background: var(--stl-bg-item);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+/* ── Main pane ────────────────────────────────────────────────────────────── */
+
+.stl-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--stl-bg-secondary);
+}
+
+.stl-filters {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--stl-border);
+}
+
+.stl-filter-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.stl-filter-label {
+  flex: 0 0 90px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stl-text-secondary);
+}
+
+.stl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.stl-chip {
+  padding: 2px 9px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  border: 1px solid var(--stl-border);
+  border-radius: 999px;
+  background: var(--stl-bg-item);
+  color: var(--stl-text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stl-chip:hover { background: var(--stl-bg-item-hover); }
+
+.stl-chip.selected {
+  background: var(--stl-accent);
+  border-color: var(--stl-accent);
+  color: #16161a;
+  font-weight: 600;
+}
+
+.stl-chip-static { cursor: default; display: inline-flex; align-items: center; gap: 4px; }
+
+.stl-chip-remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.stl-chip-remove:hover { opacity: 1; }
+
+.stl-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.stl-match-count {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--stl-text-secondary);
+}
+
+/* ── Thumbnail grid ───────────────────────────────────────────────────────── */
+
+.stl-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 6px;
+  padding: 10px 12px;
+  align-content: start;
+}
+
+.stl-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: var(--stl-radius);
+  background: var(--stl-bg-item);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.stl-thumb:hover { background: var(--stl-bg-item-hover); }
+
+.stl-thumb.selected {
+  border-color: var(--stl-accent);
+  box-shadow: 0 0 8px rgba(201, 162, 39, 0.5);
+}
+
+.stl-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: none;
+  display: block;
+}
+
+.stl-thumb-lock {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  font-size: 0.65rem;
+  opacity: 0.55;
+}
+
+.stl-load-more {
+  margin: 0 12px 8px;
+  width: calc(100% - 24px);
+}
+
+/* ── Footer actions ───────────────────────────────────────────────────────── */
+
+.stl-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--stl-border);
+  background: var(--stl-bg-primary);
+}
+
+.stl-mode {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--stl-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stl-action-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stl-primary {
+  background: var(--stl-accent);
+  border-color: var(--stl-accent);
+  color: #16161a;
+  font-weight: 600;
+}
+
+.stl-primary:hover:not(:disabled) { background: var(--stl-accent-hover); }
+
+.stl-danger { color: #d9534f; }
+
+/* ── Editors and dialogs ──────────────────────────────────────────────────── */
+
+.stl-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.stl-fieldset {
+  border: 1px solid var(--stl-border);
+  border-radius: var(--stl-radius);
+  padding: 8px 10px;
+}
+
+.stl-fieldset legend {
+  padding: 0 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--stl-text-secondary);
+}
+
+.stl-meta { font-size: 0.85rem; color: var(--stl-text-secondary); }
+
+.stl-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 0.7rem;
+  border-radius: 999px;
+  background: var(--stl-bg-item);
+}
+
+.stl-facet-row {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--stl-border);
+}
+
+.stl-facet-row:last-of-type { border-bottom: none; }
+
+.stl-facet-head,
+.stl-facet-add {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.stl-facet-head { margin-bottom: 5px; }
+.stl-facet-id { max-width: 140px; }
+
+.stl-facet-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.stl-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.stl-editor-actions .stl-danger { margin-right: auto; }
+
+/* ── Import ───────────────────────────────────────────────────────────────── */
+
+.stl-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px;
+  border: 2px dashed var(--stl-border);
+  border-radius: var(--stl-radius);
+  color: var(--stl-text-secondary);
+  text-align: center;
+}
+
+.stl-dropzone.active {
+  border-color: var(--stl-accent);
+  background: var(--stl-bg-item);
+}
+
+.stl-dropzone i { font-size: 1.6rem; }
+.stl-dropzone p { margin: 0; }
+.stl-dropzone-actions { display: flex; gap: 6px; }
+
+.stl-queue,
+.stl-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.stl-queue li,
+.stl-suggestions li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.stl-queue-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stl-queue-facets { font-size: 0.75rem; color: var(--stl-text-secondary); }
+
+/* ── Bake progress ────────────────────────────────────────────────────────── */
+
+.stl-bake-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.stl-progress {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--stl-bg-item);
+  overflow: hidden;
+}
+
+.stl-progress-bar {
+  height: 100%;
+  background: var(--stl-accent);
+  transition: width 120ms linear;
+}
+
+.stl-bake-status { margin: 0; font-size: 0.85rem; }
+.stl-bake-current { color: var(--stl-text-secondary); }
+.stl-bake-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── Shared ───────────────────────────────────────────────────────────────── */
+
+.stl-empty,
+.stl-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 12px;
+  color: var(--stl-text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.stl-warning {
+  margin: 6px 12px;
+  padding: 6px 10px;
+  border-left: 3px solid #d9a441;
+  background: var(--stl-bg-item);
+  font-size: 0.85rem;
+}

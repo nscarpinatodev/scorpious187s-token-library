@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "facets": [
+    {
+      "id": "race",
+      "label": "Race",
+      "values": ["human", "elf", "tiefling"]
+    },
+    {
+      "id": "gender",
+      "label": "Gender",
+      "values": ["male", "female"]
+    }
+  ],
+  "categories": [
+    {
+      "id": "_sample",
+      "label": "Sample",
+      "match": {
+        "names": [],
+        "creatureTypes": []
+      },
+      "images": [
+        { "file": "art/_sample/sample-human-male-01.svg", "facets": { "race": "human", "gender": "male" } },
+        { "file": "art/_sample/sample-human-female-02.svg", "facets": { "race": "human", "gender": "female" } },
+        { "file": "art/_sample/sample-elf-female-03.svg", "facets": { "race": "elf", "gender": "female" } },
+        { "file": "art/_sample/sample-elf-male-04.svg", "facets": { "race": "elf", "gender": "male" } },
+        { "file": "art/_sample/sample-tiefling-female-05.svg", "facets": { "race": "tiefling", "gender": "female" } },
+        { "file": "art/_sample/sample-tiefling-male-06.svg", "facets": { "race": "tiefling", "gender": "male" } }
+      ]
+    }
+  ]
+}

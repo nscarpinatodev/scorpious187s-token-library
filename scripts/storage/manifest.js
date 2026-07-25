@@ -1,0 +1,143 @@
+/**
+ * manifest.json — the contract between the engine and whatever art it is
+ * pointed at.
+ *
+ * Two kinds of manifest exist and they share one schema:
+ *   • the GM overlay at <libraryRoot>/manifest.json — writable, authoritative
+ *     for edits made in-game;
+ *   • zero or more read-only art-pack manifests shipped by companion modules.
+ *
+ * They are *not* merged here, because each one's `file` paths are relative to a
+ * different root. loadSources() returns them tagged with their root and
+ * library/index.js resolves and merges them.
+ */
+
+import {
+  MANIFEST_FILE, MANIFEST_VERSION, MODULE_ID,
+  ART_PACK_FLAG, ART_PACK_MANIFEST_FLAG,
+} from '../constants.js';
+import { root, source, manifestPath, join, slugify } from './paths.js';
+import { readJson, uploadJson } from './files.js';
+import { log } from '../logger.js';
+
+/** An empty but valid manifest. */
+export function defaultManifest() {
+  return {
+    version: MANIFEST_VERSION,
+    facets: [],
+    categories: [],
+  };
+}
+
+/**
+ * Coerce arbitrary JSON into the manifest shape, dropping anything malformed
+ * rather than throwing — a hand-edited manifest should degrade, not brick the
+ * module.
+ */
+export function normalize(raw) {
+  const manifest = defaultManifest();
+  if (!raw || typeof raw !== 'object') return manifest;
+
+  manifest.version = Number(raw.version) || MANIFEST_VERSION;
+
+  for (const facet of Array.isArray(raw.facets) ? raw.facets : []) {
+    const id = slugify(facet?.id);
+    if (!id) continue;
+    manifest.facets.push({
+      id,
+      label: String(facet.label ?? id),
+      values: [...new Set((Array.isArray(facet.values) ? facet.values : []).map(String).filter(Boolean))],
+    });
+  }
+
+  for (const category of Array.isArray(raw.categories) ? raw.categories : []) {
+    const id = slugify(category?.id);
+    if (!id) continue;
+    manifest.categories.push({
+      id,
+      label: String(category.label ?? id),
+      match: {
+        names: (Array.isArray(category.match?.names) ? category.match.names : []).map(String).filter(Boolean),
+        creatureTypes: (Array.isArray(category.match?.creatureTypes) ? category.match.creatureTypes : [])
+          .map(String).filter(Boolean),
+      },
+      images: (Array.isArray(category.images) ? category.images : [])
+        .filter(image => image?.file)
+        .map(image => ({
+          file: String(image.file),
+          // `external` marks a path that is already absolute within its file
+          // source — art the GM linked from elsewhere in the data directory
+          // rather than storing under the library root.
+          external: image.external === true,
+          facets: (image.facets && typeof image.facets === 'object') ? { ...image.facets } : {},
+        })),
+    });
+  }
+
+  return manifest;
+}
+
+/** Read the GM overlay. Returns an empty manifest when none exists yet. */
+export async function loadOverlay() {
+  const raw = await readJson(manifestPath());
+  if (!raw) log.debug('no overlay manifest yet — starting empty');
+  return normalize(raw);
+}
+
+/** Write the GM overlay back to the library root. */
+export async function saveOverlay(manifest) {
+  const path = await uploadJson(source(), root(), MANIFEST_FILE, normalize(manifest));
+  if (path) log.debug(`overlay manifest saved → ${path}`);
+  else log.warn('failed to save the overlay manifest');
+  return path;
+}
+
+/**
+ * Active modules advertising themselves as art packs.
+ * @returns {Array<{id: string, root: string, manifestPath: string}>}
+ */
+export function discoverArtPacks() {
+  const packs = [];
+  for (const mod of game.modules ?? []) {
+    if (!mod.active) continue;
+    const flags = mod.flags?.[MODULE_ID];
+    if (!flags?.[ART_PACK_FLAG]) continue;
+    const packRoot = `modules/${mod.id}`;
+    packs.push({
+      id: mod.id,
+      root: packRoot,
+      manifestPath: join(packRoot, flags[ART_PACK_MANIFEST_FLAG] ?? MANIFEST_FILE),
+    });
+  }
+  return packs;
+}
+
+/**
+ * Load every manifest that contributes to the library, tagged with the root its
+ * `file` paths are relative to.
+ *
+ * @returns {Promise<Array<{id: string, root: string, readOnly: boolean, manifest: object}>>}
+ *          Art packs first, GM overlay last — later entries win during merge.
+ */
+export async function loadSources() {
+  const sources = [];
+
+  for (const pack of discoverArtPacks()) {
+    const raw = await readJson(pack.manifestPath);
+    if (!raw) {
+      log.warn(`art pack "${pack.id}" declares a manifest but none could be read at ${pack.manifestPath}`);
+      continue;
+    }
+    sources.push({ id: pack.id, root: pack.root, readOnly: true, manifest: normalize(raw) });
+    log.debug(`art pack loaded: ${pack.id}`);
+  }
+
+  sources.push({
+    id: 'overlay',
+    root: root(),
+    readOnly: false,
+    manifest: await loadOverlay(),
+  });
+
+  return sources;
+}
