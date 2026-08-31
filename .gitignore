@@ -3,10 +3,14 @@ dist/
 .claude/
 *.zip
 
-# Runtime library content. The seed manifest and sample art under
-# storage/art/_sample are tracked; everything a GM adds at runtime is not.
-storage/art/*
-!storage/art/_sample/
+# The shipped token art. This is the point of the module: art/ is packaged into
+# the release so a fresh install has a library to randomize over. Sources are
+# committed as WebP; the PNG/JPG originals they were encoded from live in
+# storage/art-originals/ and stay local.
+storage/art-originals/
+
+# Derived and regenerable. baked/ is rebuilt from art/ by the bake step, and
+# frames are supplied per-world, so neither belongs in the package.
 storage/baked/
 storage/frames/*
 !storage/frames/.gitkeep
