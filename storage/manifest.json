@@ -34,8 +34,7 @@
       "label": "Gender",
       "values": [
         "female",
-        "male",
-        "androgynous"
+        "male"
       ]
     },
     {
@@ -230,7 +229,7 @@
         {
           "file": "art/commoner/openart-0217785300249664d21f3e3e165e25fcf12f86815b4407f73dcbb_0_1778530076084_2247af0f.png",
           "external": false,
-          "removed": false,
+          "removed": true,
           "facets": {
             "race": [
               "elven"
@@ -269,7 +268,7 @@
         {
           "file": "art/commoner/openart-02177853059678696d528c8df2143421f3e331d7739c2b1e1ed01_0_1778530646670_a70ede9c.png",
           "external": false,
-          "removed": false,
+          "removed": true,
           "facets": {
             "race": [
               "elven"
@@ -280,12 +279,12 @@
           }
         },
         {
-          "file": "art/commoner/Seralyne%203.jpg",
+          "file": "art/commoner/Seralyne 3.jpg",
           "external": false,
-          "removed": false,
+          "removed": true,
           "facets": {
             "race": [
-              "human"
+              "elven"
             ],
             "gender": [
               "female"
@@ -295,26 +294,7 @@
         {
           "file": "art/commoner/openart-02177874137686432716c93dca5f9defc0d360fd0d690bd8fbe6b_0_1778741436706_ff4dd6f0.png",
           "external": false,
-          "removed": false,
-          "facets": {
-            "race": [
-              "elven"
-            ],
-            "gender": [
-              "female"
-            ]
-          }
-        },
-        {
-          "file": "art/commoner/Seralyne%20Elven%20Ears.jpg",
-          "external": false,
-          "removed": false,
-          "facets": {}
-        },
-        {
-          "file": "art/commoner/Seralyne 3.jpg",
-          "external": false,
-          "removed": false,
+          "removed": true,
           "facets": {
             "race": [
               "elven"
@@ -327,7 +307,7 @@
         {
           "file": "art/commoner/Seralyne Elven Ears.jpg",
           "external": false,
-          "removed": false,
+          "removed": true,
           "facets": {
             "race": [
               "elven"

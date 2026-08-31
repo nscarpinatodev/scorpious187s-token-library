@@ -114,7 +114,7 @@ export const DEFAULT_FACETS = [
       'aasimar', 'genasi', 'goliath', 'firbolg', 'tabaxi', 'kenku', 'leshy',
     ],
   },
-  { id: 'gender', label: 'Gender', values: ['male', 'female', 'androgynous'] },
+  { id: 'gender', label: 'Gender', values: ['male', 'female'] },
   { id: 'age', label: 'Age', values: ['child', 'young', 'adult', 'middle-aged', 'elderly'] },
   { id: 'build', label: 'Build', values: ['slight', 'average', 'stocky', 'muscular', 'heavy'] },
   { id: 'environment', label: 'Environment', values: ['urban', 'rural', 'wilderness', 'coastal', 'underground', 'desert', 'arctic'] },
