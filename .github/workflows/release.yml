@@ -36,7 +36,7 @@ jobs:
       # `storage` ships the seed manifest and sample art. Foundry preserves it
       # across updates because the manifest sets persistentStorage: true.
       - name: Build module.zip
-        run: zip -r module.zip module.json LICENSE README.md scripts styles templates lang storage
+        run: zip -r module.zip module.json LICENSE ART-LICENSE.md README.md scripts styles templates lang storage
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

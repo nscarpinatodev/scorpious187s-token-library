@@ -13,7 +13,7 @@
 
 import { MODULE_ID, FLAGS } from '../constants.js';
 import { libApi } from '../integrations/lib.js';
-import { category, categories, images, randomImage } from './index.js';
+import { category, categories, images, randomImage, tokenCount } from './index.js';
 import { slugify } from '../storage/paths.js';
 
 /**
@@ -70,7 +70,7 @@ export function matchCategory(actor) {
   };
 
   for (const cat of categories()) {
-    if (!cat.images.length) continue;
+    if (!tokenCount(cat)) continue;
 
     const aliases = [...new Set([cat.id, slugify(cat.label), ...cat.match.names.map(slugify)])]
       .filter(Boolean);
@@ -102,7 +102,7 @@ export function matchCategory(actor) {
   const creatureType = slugify(libApi()?.systems?.resolveCreatureType?.(actor) ?? '');
   if (creatureType) {
     for (const cat of categories()) {
-      if (!cat.images.length) continue;
+      if (!tokenCount(cat)) continue;
       if (cat.match.creatureTypes.map(slugify).includes(creatureType)) {
         consider(cat, 10, `creature type "${creatureType}"`);
       }

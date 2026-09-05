@@ -117,6 +117,8 @@
           <img src="{{this.src}}" alt="{{this.filename}}" loading="lazy">
           {{#if this.readOnly}}<i class="fas fa-lock stl-thumb-badge"></i>{{/if}}
           {{#if this.untagged}}<i class="fas fa-tag stl-thumb-badge stl-thumb-untagged"></i>{{/if}}
+          {{#if this.hasPortrait}}<i class="fas fa-user stl-thumb-badge stl-thumb-portrait"
+                                     data-tooltip="{{localize 'STL.Browser.PortraitPaired'}}"></i>{{/if}}
         </button>
       {{else}}
         <p class="stl-empty">{{localize "STL.Browser.NoImages"}}</p>

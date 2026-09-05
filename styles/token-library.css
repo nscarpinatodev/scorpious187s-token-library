@@ -286,6 +286,16 @@
   opacity: 0.75;
 }
 
+/* A paired portrait sits opposite the lock, so the two never collide. */
+.stl-thumb-portrait {
+  right: auto;
+  left: 4px;
+  bottom: 18px;
+  opacity: 0.7;
+}
+
+.stl-thumb-untagged + .stl-thumb-portrait { bottom: 18px; }
+
 /* ── Selection + tagging ──────────────────────────────────────────────────── */
 
 .stl-selection-bar,

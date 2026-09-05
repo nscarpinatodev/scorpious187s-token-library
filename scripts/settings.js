@@ -1,10 +1,11 @@
 /**
  * World and client settings.
  *
- * Registered from init via the lib's registerModule bootstrap. Anything that
- * changes what lands on a token is world-scoped so every client agrees;
- * `debug` is the only client-scoped setting, matching the family convention
- * that makeLogger() reads.
+ * Registered directly from main.js's init hook — not through the lib's
+ * registerModule bootstrap, which cannot be reached at module-evaluation time;
+ * main.js explains why. Anything that changes what lands on a token is
+ * world-scoped so every client agrees. `debug` and `thumbnailSize` are
+ * client-scoped, the former matching the family convention makeLogger() reads.
  */
 
 import {
@@ -178,7 +179,16 @@ export function registerSettings() {
     default: 'none',
   });
 
-  // ── Automatic application ──────────────────────────────────────────────────
+  // ── Application ────────────────────────────────────────────────────────────
+
+  game.settings.register(MODULE_ID, SETTINGS.APPLY_PORTRAIT, {
+    name: t('ApplyPortrait'),
+    hint: t('ApplyPortraitHint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true,
+  });
 
   game.settings.register(MODULE_ID, SETTINGS.AUTO_APPLY, {
     name: t('AutoApply'),

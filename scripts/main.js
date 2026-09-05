@@ -39,6 +39,19 @@ const INLINE_THEME_TARGETS = [
 
 let libMissing = false;
 
+/**
+ * Whether the module is in a state where its entry points should do anything.
+ *
+ * The hooks below are registered at module scope, so they fire even on the init
+ * path that bailed out for a missing lib — and every one of them leads to the
+ * browser, which reads settings that were never registered. Foundry normally
+ * refuses to enable us without the lib, so this is a backstop rather than a
+ * routine path.
+ */
+function operational() {
+  return !libMissing && game.user?.isGM === true;
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 Hooks.once('init', () => {
@@ -150,7 +163,7 @@ Hooks.on('updateSetting', async (setting) => {
 
 /** Token layer control, so the browser is reachable without a token selected. */
 Hooks.on('getSceneControlButtons', (controls) => {
-  if (!game.user.isGM) return;
+  if (!operational()) return;
 
   // Only onChange. SceneControls#onChange invokes onChange *and* the deprecated
   // onClick for the same activation, so registering both opens the browser
@@ -177,7 +190,7 @@ Hooks.on('getSceneControlButtons', (controls) => {
 /** Header control on ApplicationV2 actor sheets (v13+). */
 Hooks.on('getHeaderControlsApplicationV2', (app, controls) => {
   const actor = app?.document;
-  if (!actor || actor.documentName !== 'Actor' || !game.user.isGM) return;
+  if (!actor || actor.documentName !== 'Actor' || !operational()) return;
   controls.push({
     icon: 'fas fa-images',
     label: 'STL.Browser.OpenForActor',
@@ -189,7 +202,7 @@ Hooks.on('getHeaderControlsApplicationV2', (app, controls) => {
 /** Header button on legacy Application actor sheets. */
 Hooks.on('getActorSheetHeaderButtons', (sheet, buttons) => {
   const actor = sheet.actor ?? sheet.document;
-  if (!actor || !game.user.isGM) return;
+  if (!actor || !operational()) return;
   buttons.unshift({
     label: game.i18n.localize('STL.Browser.OpenForActor'),
     class: 'stl-open-browser',
@@ -206,7 +219,7 @@ function registerTokenHudButton() {
     cssClass: 'stl-hud-library',
     icon: 'fas fa-images',
     tooltip: game.i18n.localize('STL.Browser.OpenForActor'),
-    condition: () => game.user.isGM,
+    condition: () => operational(),
     onClick: (actor) => openBrowser({ actor }),
   });
 }
@@ -216,7 +229,7 @@ function addActorContext(options) {
   options.push({
     name: game.i18n.localize('STL.Browser.OpenForActor'),
     icon: '<i class="fas fa-images"></i>',
-    condition: () => game.user.isGM,
+    condition: () => operational(),
     callback: (li) => {
       const el = li?.dataset ? li : (li?.[0] ?? li?.currentTarget ?? null);
       const id = el?.dataset?.documentId ?? el?.dataset?.entryId

@@ -3,13 +3,16 @@
 A categorised, facet-tagged token art library for Foundry VTT that you can grow
 from inside the game.
 
-Browse thousands of token images by category and traits, apply them to actors or
+Browse hundreds of token images by category and traits, apply them to actors or
 placed tokens, and render them through either Foundry's dynamic token ring or a
 frame of your choosing. Art lives in persistent storage that survives module
 updates.
 
 - **Foundry**: v13 minimum, verified on v14
-- **Requires**: [Scorpious187's Module Library](https://github.com/nscarpinatodev/scorpious187s-lib), [Tokenizer 2](https://www.patreon.com/MrPrimate)
+- **Requires**: [Scorpious187's Module Library](https://github.com/nscarpinatodev/scorpious187s-lib)
+- **Optional**: [Tokenizer 2](https://www.patreon.com/MrPrimate) — adds frame baking
+  and the editor round-trip on import. Everything else works without it.
+- **Licence**: MIT for the code, [CC0](ART-LICENSE.md) for the shipped art
 
 ---
 
@@ -22,6 +25,7 @@ updates.
 | **Two ring modes** | Foundry's dynamic ring, or a frame composited into the artwork by Tokenizer 2. |
 | **Grow it in-game** | Drag images in, add categories, add traits and values. No JSON editing required. |
 | **Auto-apply** | Actors whose names match a category get art automatically when dropped on the canvas. |
+| **Portraits** | Non-square art is kept out of token pools and applied to the actor's avatar instead. |
 
 ## How art is organised
 
@@ -90,6 +94,51 @@ An image can hold **several values of the same trait** — a token that reads as
 both a guard and a soldier can carry both, and will surface under either filter.
 Traits you don't touch in the panel are left exactly as they are, so tagging
 Race never disturbs Gender.
+
+## Token art and portraits
+
+A generated character usually arrives as a set: a square token crop, and the 3:4
+portrait or reference sheet it was cut from, both in the same folder. Only the
+square one belongs on the canvas — a reference sheet stretched across a token
+reads as a bug.
+
+So **any file whose name carries `portrait` is treated as portrait art**: it is
+excluded from every randomisation pool, never baked, and does not count towards a
+category's image count. Instead it is paired with the token art of the same
+subject, and applying that art sets the **actor's avatar** to the portrait. The
+token itself is unaffected.
+
+```
+art/dragonriders/dragon-imperium/
+  dragon-imperium-01-human-male-token-1x1.png      → the token
+  dragon-imperium-01-human-male-portrait-3x4.png   → the avatar
+```
+
+Pairing works two ways. If a token and a portrait reduce to the same name once
+framing markers (`portrait`, `token`, `square`, `1x1`, `3x4`) are stripped, they
+are a pair — that is the case above. Otherwise, if a folder holds a single
+subject, because everything in it shares a leading name the way
+`uniques/zolra/` does, the closest-matching portrait in it is used:
+
+```
+art/uniques/zolra/
+  unique-zolra-storm-sorceress-bust-1x1.webp           → the token
+  unique-zolra-storm-sorceress-full-body-portrait.webp → the avatar
+```
+
+Numbers in a name are respected, so in a numbered set rider 03 will never inherit
+rider 01's face — it simply goes unpaired. A category folder of hundreds of
+unrelated commoners shares no leading name, so nothing there is paired by
+accident either.
+
+Thumbnails with a paired portrait are marked with a person icon in the browser.
+Turn the whole behaviour off with **Use Portrait Art as Actor Avatar** if you
+would rather manage avatars yourself; images with no paired portrait never touch
+the avatar regardless.
+
+You can also set the `framing` trait by hand in the tag panel to mark art the
+filename never declared — or to rescue a token whose name happens to contain the
+word "portrait".
 
 ## Categories vs traits
 
@@ -181,7 +230,11 @@ is a job for your file manager.
 The default location is the module's own persistent storage, which Foundry
 preserves across module updates. Nothing is copied on first run.
 
-If you point **Library Folder** somewhere else, the contents are copied there.
+If you point **Library Folder** somewhere else, the contents are copied there,
+with the folder tree intact to whatever depth it goes — subfolders carry your
+trait tagging, so a copy that flattened them would lose the tagging along with
+the layout.
+
 Foundry has no server-side copy, so that means one download and one upload per
 file, through your browser. It runs in batches with progress, and resumes if
 interrupted. Baked composites are skipped — regenerating them is cheaper than
@@ -237,4 +290,6 @@ is fully defined here rather than depending on another module's internals.
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+- **Code** — MIT, see [LICENSE](LICENSE).
+- **Token art** — CC0 public domain dedication, see [ART-LICENSE.md](ART-LICENSE.md),
+  which also covers how the art was generated and what that means for reuse.

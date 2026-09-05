@@ -120,4 +120,8 @@ export const DEFAULT_FACETS = [
   { id: 'environment', label: 'Environment', values: ['urban', 'rural', 'wilderness', 'coastal', 'underground', 'desert', 'arctic'] },
   { id: 'armour', label: 'Armour', values: ['unarmoured', 'light', 'medium', 'heavy', 'robes'] },
   { id: 'mood', label: 'Mood', values: ['friendly', 'neutral', 'hostile', 'wary', 'wounded'] },
+  // Framing is inferred from the filename and rarely set by hand, but it lives
+  // here so a GM can mark art the name never declared — or rescue a token whose
+  // name happens to contain "portrait".
+  { id: 'framing', label: 'Framing', values: ['token', 'portrait'] },
 ];

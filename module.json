@@ -1,7 +1,7 @@
 {
   "id": "scorpious187s-token-library",
   "title": "Scorpious187's Token Library",
-  "description": "A categorised, facet-tagged token art library you can grow from inside the game. Browse thousands of token images by category and traits, apply them as random-image wildcards, and render them through Foundry's dynamic token ring or a baked frame of your choice. Images live in persistent storage that survives module updates.",
+  "description": "A categorised, facet-tagged token art library you can grow from inside the game. Browse hundreds of token images by category and traits, apply them as random-image wildcards, and render them through Foundry's dynamic token ring or a baked frame of your choice. Portrait art is paired with its token art and applied to the actor's avatar. Images live in persistent storage that survives module updates.",
   "version": "0.1.0",
   "persistentStorage": true,
   "esmodules": [
@@ -33,11 +33,13 @@
         "compatibility": {
           "minimum": "0.3.0"
         }
-      },
+      }
+    ],
+    "recommends": [
       {
         "id": "tokenizer-2",
         "type": "module",
-        "manifest": "https://artifacts.ddb.mrprimate.co.uk/tokenizer/7fgh734/module.json",
+        "reason": "Adds frame baking and the Tokenizer editor round-trip when importing images. The library works without it.",
         "compatibility": {
           "minimum": "1.2.0"
         }

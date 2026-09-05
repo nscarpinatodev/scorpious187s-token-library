@@ -22,6 +22,7 @@ export const SETTINGS = Object.freeze({
   RING_COLOR:     'ringColor',
   RING_BACKGROUND:'ringBackground',
   RING_EFFECTS:   'ringEffects',
+  APPLY_PORTRAIT: 'applyPortrait',
   AUTO_APPLY:     'autoApply',
   AUTO_APPLY_LINKED: 'autoApplyLinked',
   EXPORT_SIZE:    'exportSize',
@@ -33,11 +34,12 @@ export const SETTINGS = Object.freeze({
 /**
  * How a chosen image is turned into a rendered token.
  *
- * DYNAMIC leaves ring.subject.texture blank on purpose so wildcards keep
- * randomising — see client/canvas/placeables/tokens/ring.mjs, which only
- * overrides the subject mesh when that field is truthy. The artwork itself is
- * still masked to a circle first, otherwise a square portrait spills outside
- * the ring; that is what RING_MASK is for.
+ * DYNAMIC sets ring.subject.texture explicitly, which is what puts the artwork
+ * inside the ring band rather than over it — ring/apply.js has the full account
+ * of why the blank-subject alternative looked right and was not. The artwork is
+ * masked to a circle first, otherwise a square portrait spills outside the ring;
+ * that is what RING_MASK is for. The cost is that native wildcards cannot vary a
+ * dynamic ring, so DYNAMIC rolls per token in hooks/auto-apply.js instead.
  */
 export const RING_MODES = Object.freeze({
   DYNAMIC: 'dynamic',
@@ -91,6 +93,24 @@ export const SUBJECT_FITS = Object.freeze({
  */
 export const COMPOSITE_VERSION = 4;
 
+/**
+ * How a file is framed, as opposed to what it depicts.
+ *
+ * Art collections mix token art with the portrait and reference sheets it was
+ * cut from, and both land in the same folder. Only the square token art belongs
+ * in a randomisation pool — a 3:4 reference sheet dropped on the canvas reads as
+ * a bug — so framing is a trait like any other, and the pools filter on it.
+ *
+ * Portraits are not wasted, though: an image paired with one applies it to the
+ * actor's avatar (see library/framing.js).
+ */
+export const FRAMING_FACET = 'framing';
+
+export const FRAMING = Object.freeze({
+  TOKEN:    'token',
+  PORTRAIT: 'portrait',
+});
+
 /** Actor/token flags on this module's namespace. */
 export const FLAGS = Object.freeze({
   /** The GM's saved browser selection: {categoryId, facets, file|null, wildcard}. */
@@ -120,6 +140,16 @@ export const DIRS = Object.freeze({
 
 export const MANIFEST_FILE = 'manifest.json';
 export const MANIFEST_VERSION = 1;
+
+/**
+ * How deep the art tree is walked, by everything that walks it.
+ *
+ * Shared because the walkers have to agree: the scanner treats subfolders as
+ * traits and so descends, and relocation has to carry that same tree across
+ * intact. When only the scanner knew about nesting, moving a library copied
+ * the top level and silently dropped everything below it.
+ */
+export const MAX_TREE_DEPTH = 6;
 
 /** Marker file written after a relocation copy so it can resume after a reload. */
 export const RELOCATE_STATE_FILE = '.relocate-state.json';

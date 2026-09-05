@@ -7,11 +7,12 @@
  * never touches storage directly.
  */
 
-import { HOOK_CHANGED, HOOK_READY, DIRS } from '../constants.js';
+import { HOOK_CHANGED, HOOK_READY, DIRS, MAX_TREE_DEPTH, FRAMING, FRAMING_FACET } from '../constants.js';
 import { loadSources, saveOverlay, defaultManifest } from '../storage/manifest.js';
 import { browse, browseImages } from '../storage/files.js';
 import { source, join, basename, slugify, decodePath, root as libraryRoot } from '../storage/paths.js';
 import { inferFacets } from './infer.js';
+import { isPortrait as detectPortrait, pairPortraits } from './framing.js';
 import { log } from '../logger.js';
 
 /**
@@ -23,6 +24,10 @@ import { log } from '../logger.js';
  * @property {Record<string,string>} facets
  * @property {string} sourceId  Which manifest source contributed it.
  * @property {boolean} readOnly True for art-pack images.
+ * @property {boolean} isPortrait True for portrait/reference art, which is kept
+ *           out of token pools and used for actor avatars instead.
+ * @property {string|null} portrait Path of this image's paired portrait, when
+ *           one was found in the same directory.
  */
 
 /**
@@ -66,11 +71,43 @@ export function category(id) {
   return state.categories.get(id) ?? null;
 }
 
-/** Total image count across the library. */
+/**
+ * Total token-art count across the library.
+ * Portraits are excluded: they are never dropped on the canvas, so counting
+ * them would overstate what the library can actually put on a token.
+ */
 export function imageCount() {
   let total = 0;
-  for (const cat of state.categories.values()) total += cat.images.length;
+  for (const cat of state.categories.values()) {
+    total += cat.images.reduce((n, image) => n + (image.isPortrait ? 0 : 1), 0);
+  }
   return total;
+}
+
+/** Total portrait count across the library. */
+export function portraitCount() {
+  let total = 0;
+  for (const cat of state.categories.values()) {
+    total += cat.images.reduce((n, image) => n + (image.isPortrait ? 1 : 0), 0);
+  }
+  return total;
+}
+
+/** How much token art a category holds, ignoring its portraits. */
+export function tokenCount(cat) {
+  return cat.images.reduce((n, image) => n + (image.isPortrait ? 0 : 1), 0);
+}
+
+/**
+ * The portrait paired with an image, or null.
+ * Resolved at build time; this is just the lookup.
+ * @param {LibraryImage|null} image
+ * @returns {LibraryImage|null}
+ */
+export function portraitFor(image) {
+  if (!image?.portrait) return null;
+  const cat = category(image.categoryId);
+  return cat?.images.find(candidate => candidate.path === image.portrait) ?? null;
 }
 
 /**
@@ -114,12 +151,13 @@ export function facetsFor(categoryId) {
  * @param {Record<string, string[]>} [filter]
  * @returns {LibraryImage[]}
  */
-export function images(categoryId, filter = {}) {
+export function images(categoryId, filter = {}, { includePortraits = false } = {}) {
   const cat = category(categoryId);
   if (!cat) return [];
+  const pool = includePortraits ? cat.images : cat.images.filter(image => !image.isPortrait);
   const active = Object.entries(filter).filter(([, values]) => values?.length);
-  if (!active.length) return cat.images;
-  return cat.images.filter(image => active.every(([facetId, wanted]) => {
+  if (!active.length) return pool;
+  return pool.filter(image => active.every(([facetId, wanted]) => {
     const held = image.facets[facetId];
     return Array.isArray(held) && held.some(value => wanted.includes(value));
   }));
@@ -219,6 +257,8 @@ export async function build({ scan = true } = {}) {
           facets: { ...image.facets },
           sourceId: src.id,
           readOnly: src.readOnly,
+          isPortrait: detectPortrait(basename(path), image.facets),
+          portrait: null,
         });
       }
 
@@ -233,16 +273,17 @@ export async function build({ scan = true } = {}) {
 
   for (const cat of state.categories.values()) {
     cat.images.sort((a, b) => a.filename.localeCompare(b.filename, undefined, { numeric: true }));
+    linkPortraits(cat);
   }
 
   state.built = true;
-  log.log(`index built: ${state.categories.size} categories, ${imageCount()} images`);
+  log.log(
+    `index built: ${state.categories.size} categories, ${imageCount()} images`
+    + `, ${portraitCount()} portrait(s)`,
+  );
   Hooks.callAll(HOOK_CHANGED);
   return state;
 }
-
-/** Guard against a runaway walk if someone nests art absurdly deep. */
-const MAX_SCAN_DEPTH = 6;
 
 /**
  * Pick up image files sitting under `art/<categoryId>/` that no manifest
@@ -306,27 +347,54 @@ async function scanCategoryDir(scanRoot, dir, cat, removed, trail, depth) {
     if (cat.images.some(i => i.path === path)) continue;
 
     const filename = basename(path);
+    // Folders beat the filename: putting a file in a folder is deliberate,
+    // whereas a filename match can be a coincidence.
+    const facets = { ...inferFacets(filename, state.facets), ...fromFolders };
     cat.images.push({
       path,
       filename,
       dir,
       categoryId: cat.id,
-      // Folders beat the filename: putting a file in a folder is deliberate,
-      // whereas a filename match can be a coincidence.
-      facets: { ...inferFacets(filename, state.facets), ...fromFolders },
+      facets,
       sourceId: scanRoot.id,
       readOnly: scanRoot.readOnly,
+      isPortrait: detectPortrait(filename, facets),
+      portrait: null,
     });
   }
 
-  if (depth >= MAX_SCAN_DEPTH) {
-    log.warn(`stopped scanning below ${dir} — nested more than ${MAX_SCAN_DEPTH} deep`);
+  if (depth >= MAX_TREE_DEPTH) {
+    log.warn(`stopped scanning below ${dir} — nested more than ${MAX_TREE_DEPTH} deep`);
     return;
   }
 
   const { dirs } = await browse(scanRoot.source, dir);
   for (const sub of dirs) {
     await scanCategoryDir(scanRoot, sub, cat, removed, [...trail, basename(sub)], depth + 1);
+  }
+}
+
+/**
+ * Work out each image's paired portrait, one directory at a time.
+ *
+ * Per directory because that is the unit a generated set arrives in, and
+ * because it keeps the comparison cheap — pairing is O(tokens x portraits)
+ * within a folder rather than across a category of hundreds.
+ */
+function linkPortraits(cat) {
+  const byDir = new Map();
+  for (const image of cat.images) {
+    image.portrait = null;
+    if (!byDir.has(image.dir)) byDir.set(image.dir, []);
+    byDir.get(image.dir).push(image);
+  }
+
+  for (const group of byDir.values()) {
+    const pairs = pairPortraits(group);
+    if (!pairs.size) continue;
+    for (const image of group) {
+      image.portrait = pairs.get(image.path) ?? null;
+    }
   }
 }
 

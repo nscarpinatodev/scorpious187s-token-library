@@ -9,7 +9,7 @@
  * reload.
  */
 
-import { DIRS, RELOCATE_STATE_FILE, MANIFEST_FILE } from '../constants.js';
+import { DIRS, RELOCATE_STATE_FILE, MANIFEST_FILE, MAX_TREE_DEPTH } from '../constants.js';
 import { root, source, join, framesDir, trimSlashes } from './paths.js';
 import {
   ensureDir, browse, browseImages, copyFiles, readJson, uploadJson,
@@ -28,6 +28,42 @@ export async function ensureLibraryTree() {
 }
 
 /**
+ * Every image at or below `dir`, paired with the destination directory that
+ * puts it back in the same place relative to the new root.
+ *
+ * Recursive because subfolders are not decoration: the scanner reads them as
+ * traits (`art/guard/dwarf/male/` tags an image dwarf and male), so a copy that
+ * flattened or skipped them would lose the tagging along with the files.
+ *
+ * `io` is injected so the walk can be exercised without a Foundry FilePicker;
+ * production callers take the default.
+ *
+ * @returns {Promise<Array<{from: string, dir: string}>>}
+ */
+export async function planImageTree(
+  src, fromRoot, toRoot, dir, depth = 0, io = { browse, browseImages },
+) {
+  const entries = [];
+  const relative = trimSlashes(dir).slice(trimSlashes(fromRoot).length);
+  const destination = join(toRoot, relative);
+
+  for (const file of await io.browseImages(src, dir)) {
+    entries.push({ from: file, dir: destination });
+  }
+
+  if (depth >= MAX_TREE_DEPTH) {
+    log.warn(`stopped planning below ${dir} — nested more than ${MAX_TREE_DEPTH} deep`);
+    return entries;
+  }
+
+  const { dirs } = await io.browse(src, dir);
+  for (const sub of dirs) {
+    entries.push(...await planImageTree(src, fromRoot, toRoot, sub, depth + 1, io));
+  }
+  return entries;
+}
+
+/**
  * Enumerate every file that would need copying out of an old root.
  * @returns {Promise<Array<{from: string, dir: string}>>}
  */
@@ -39,19 +75,9 @@ async function planCopy(fromRoot, toRoot) {
   const { files: rootFiles } = await browse(src, fromRoot);
   if (rootFiles.includes(manifest)) entries.push({ from: manifest, dir: toRoot });
 
-  // Art, one directory per category.
-  const { dirs: artDirs } = await browse(src, join(fromRoot, DIRS.ART));
-  for (const dir of artDirs) {
-    const name = trimSlashes(dir).split('/').pop();
-    for (const file of await browseImages(src, dir)) {
-      entries.push({ from: file, dir: join(toRoot, DIRS.ART, name) });
-    }
-  }
-
-  // Frames.
-  for (const file of await browseImages(src, join(fromRoot, DIRS.FRAMES))) {
-    entries.push({ from: file, dir: join(toRoot, DIRS.FRAMES) });
-  }
+  // Art and frames, at whatever depth they sit.
+  entries.push(...await planImageTree(src, fromRoot, toRoot, join(fromRoot, DIRS.ART)));
+  entries.push(...await planImageTree(src, fromRoot, toRoot, join(fromRoot, DIRS.FRAMES)));
 
   // Baked composites are a cache — cheaper to regenerate than to copy, so they
   // are deliberately left behind.

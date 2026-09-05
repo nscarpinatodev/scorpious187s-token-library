@@ -3,38 +3,30 @@
   "STL.Common.Cancel": "Cancel",
   "STL.Common.Close": "Close",
   "STL.Common.Remove": "Remove",
-
   "STL.Settings.LibraryPath": "Library Folder",
   "STL.Settings.LibraryPathHint": "Where token art, frames, and the manifest live. The default is this module's persistent storage, which survives module updates. Changing this copies the library to the new location — one upload per file, so it can take a while for a large library.",
   "STL.Settings.LibrarySource": "Library File Source",
   "STL.Settings.LibrarySourceHint": "The file storage bucket the library folder belongs to. Leave as 'data' unless you are using S3 or a Forge asset library ('forgevtt').",
-
   "STL.Settings.RingMode": "Token Presentation",
   "STL.Settings.RingModeHint": "How library art is turned into a token. Dynamic Ring lets Foundry draw its own ring around the artwork. Selected Frame composites the artwork onto a frame image ahead of time.",
   "STL.Settings.RingModeDynamic": "Dynamic Token Ring",
   "STL.Settings.RingModeFrame": "Selected Token Frame",
-
   "STL.Settings.FrameSrc": "Token Frame",
   "STL.Settings.FrameSrcHint": "The frame image composited behind and around the artwork in Selected Token Frame mode. Ignored in Dynamic Token Ring mode.",
-
   "STL.Settings.SubjectFit": "Subject Framing",
   "STL.Settings.SubjectFitHint": "How source artwork is framed before clipping. Art is clipped to a circle covering two thirds of the token, so fitting a tall full-body portrait whole lands that circle around the midriff. Fill from the top keeps the face.",
   "STL.Settings.SubjectFitCoverTop": "Fill, keep the top (best for full-body art)",
   "STL.Settings.SubjectFitCover": "Fill, keep the centre",
   "STL.Settings.SubjectFitContain": "Fit the whole image (art is already a square bust)",
-
   "STL.Settings.MaskMode": "Subject Clipping",
   "STL.Settings.MaskModeHint": "How artwork is clipped before a ring or frame is applied. A square portrait dropped straight into a dynamic ring spills outside it, so clipping is on by default.",
   "STL.Settings.MaskModeCircle": "Circle (built in)",
   "STL.Settings.MaskModeImage": "Custom mask image",
   "STL.Settings.MaskModeNone": "None — use artwork as-is",
-
   "STL.Settings.RingMask": "Custom Mask Image",
   "STL.Settings.RingMaskHint": "Used when Subject Clipping is set to 'Custom mask image'. The artwork is kept wherever this image is opaque and erased where it is transparent, so a mask should be a solid shape on a transparent background. Tokenizer 2's masks under modules/tokenizer-2/img/masks/ work well.",
-
   "STL.Settings.ThumbnailSize": "Browser Thumbnail Size",
   "STL.Settings.ThumbnailSizeHint": "How large token images appear in the library browser. Larger sizes show fewer per row.",
-
   "STL.Settings.RingScale": "Ring Subject Scale",
   "STL.Settings.RingScaleHint": "How large the artwork sits inside the dynamic ring. Leave at 1 unless your art needs it: processing already clips the subject to the size Foundry's rings expect, so lowering this shrinks the art away from the ring rather than fitting it. Dynamic Token Ring mode only.",
   "STL.Settings.RingColor": "Ring Colour",
@@ -48,20 +40,18 @@
   "STL.Settings.RingEffectsGradient": "Gradient",
   "STL.Settings.RingEffectsWave": "Background Wave",
   "STL.Settings.RingEffectsPulseGradient": "Pulse + Gradient",
-
+  "STL.Settings.ApplyPortrait": "Use Portrait Art as Actor Avatar",
+  "STL.Settings.ApplyPortraitHint": "When the art you apply has a portrait paired with it — the taller image it was cut from, sitting in the same folder — set that as the actor’s avatar. The token itself is unaffected. Images with no paired portrait leave the avatar alone either way.",
   "STL.Settings.AutoApply": "Auto-Apply on Token Creation",
   "STL.Settings.AutoApplyHint": "When an actor has no saved library selection but its name matches a category, give new tokens a random image from that category. Only actors still using the default token artwork are touched.",
   "STL.Settings.AutoApplyLinked": "Include Linked Actors",
   "STL.Settings.AutoApplyLinkedHint": "Also auto-apply to linked actors (usually player characters). Off by default, since those normally have deliberately chosen artwork.",
-
   "STL.Settings.ExportSize": "Baked Image Size",
   "STL.Settings.ExportSizeHint": "Pixel dimensions of composites produced in Selected Token Frame mode.",
   "STL.Settings.ExportFormat": "Baked Image Format",
   "STL.Settings.ExportFormatHint": "File format for composites. WebP is smaller; PNG is more widely compatible.",
-
   "STL.Settings.Debug": "Debug Logging",
   "STL.Settings.DebugHint": "Print verbose diagnostics to the browser console.",
-
   "STL.Browser.Title": "Token Library",
   "STL.Browser.OpenForActor": "Token Library",
   "STL.Browser.Categories": "Categories",
@@ -90,7 +80,6 @@
   "STL.Browser.RefreshHint": "Rescan the library folder",
   "STL.Browser.ModeHint": "Change this in the module settings",
   "STL.Browser.NoFrameChosen": "Selected Token Frame mode is active but no frame image is configured. Pick one in the module settings.",
-
   "STL.Category.Title": "Category & Traits",
   "STL.Category.Details": "Category",
   "STL.Category.Label": "Name",
@@ -117,7 +106,6 @@
   "STL.Category.DeleteTitle": "Remove Category",
   "STL.Category.DeleteMessage": "<p>Remove <strong>{label}</strong> and its {count} image entries from the library?</p><p>The image files stay in your data folder — nothing is deleted from disk.</p>",
   "STL.Category.NeedName": "A category needs a name.",
-
   "STL.Import.Title": "Add Images",
   "STL.Import.Target": "Adding to",
   "STL.Import.DropHere": "Drop image files here",
@@ -133,14 +121,12 @@
   "STL.Import.NeedCategory": "Choose a category before adding images.",
   "STL.Import.NothingQueued": "No images queued.",
   "STL.Import.NoTokenizer": "Tokenizer 2 is not available. Images will be added as-is; frame compositing is unavailable.",
-
   "STL.Remove.Action": "Remove from Library",
   "STL.Remove.Title": "Remove from Library",
   "STL.Remove.Message": "<p>Remove <strong>{count}</strong> image(s) from the library?</p>",
   "STL.Remove.Done": "Removed {count} image(s) from the library.",
   "STL.Remove.Restore": "Restore Removed",
   "STL.Remove.RestoreHint": "Bring back every image previously removed from this category.",
-
   "STL.Tag.Assign": "Traits",
   "STL.Tag.Hint": "Tick every value that applies — traits you don't touch are left alone.",
   "STL.Tag.WillWrite": "This trait will be written to the selected images.",
@@ -150,7 +136,6 @@
   "STL.Tag.NothingChosen": "Click a trait value first — nothing has been changed.",
   "STL.Tag.NoFacets": "No traits are defined yet. Add one to start tagging.",
   "STL.Tag.NoValues": "No values yet — add some in the category editor.",
-
   "STL.Bake.Title": "Processing Images",
   "STL.Bake.Frame": "Variant",
   "STL.Bake.Written": "Written",
@@ -158,21 +143,19 @@
   "STL.Bake.FailedCount": "Failed",
   "STL.Bake.Cancelled": "Cancelled before finishing.",
   "STL.Bake.Failed": "Baking failed: {error}",
-
   "STL.Relocate.ResumeTitle": "Resume Library Move",
   "STL.Relocate.ResumeMessage": "<p>A previous library move from <code>{from}</code> to <code>{to}</code> did not finish.</p><p>Resume it now?</p>",
   "STL.Relocate.Progress": "Moving token library — {done} / {total} files…",
   "STL.Relocate.Done": "Library move finished: {count} file(s) copied, {failed} failed.",
-
   "STL.Frames.SectionLabel": "Token Library Frames",
-
   "STL.Warn.EmptySelection": "No images match the current selection.",
   "STL.Warn.NoTokensSelected": "Select one or more tokens on the canvas first.",
   "STL.Warn.NoActor": "No actor to apply to. Select a token or open the library from an actor sheet.",
-
   "STL.Info.AppliedToTokens": "Applied library art to {count} token(s).",
   "STL.Info.AppliedToActor": "Applied library art to {name}.",
   "STL.Info.AppliedToActorAndTokens": "Applied library art to {name} and {count} placed token(s).",
   "STL.Info.AlreadyBaked": "Every image in this selection is already processed.",
-  "STL.Info.NoProcessingNeeded": "The current settings need no processing — the artwork is used as-is."
+  "STL.Info.NoProcessingNeeded": "The current settings need no processing — the artwork is used as-is.",
+  "STL.Info.AppliedToActorWithPortrait": "Applied library art to {name}, including a portrait avatar.",
+  "STL.Browser.PortraitPaired": "Has a paired portrait, used for the actor avatar"
 }

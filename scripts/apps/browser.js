@@ -19,6 +19,7 @@ import { get } from '../settings.js';
 import {
   categories, category, facets as allFacets, facetsFor, images as libraryImages,
   imageCount, isBuilt, build, setImageFacets, removeImages, restoreRemoved, seedDefaults,
+  tokenCount,
 } from '../library/index.js';
 import { libApi } from '../integrations/lib.js';
 import { encodePath } from '../storage/paths.js';
@@ -123,21 +124,23 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     const shown = matches.slice(0, this.#visible);
     const mode = ringMode();
     const variant = currentVariant();
-    const untagged = active ? active.images.filter(i => !Object.keys(i.facets).length).length : 0;
+    const untagged = active
+      ? this.matches.filter(i => !Object.keys(i.facets).length).length
+      : 0;
 
     return {
       isGM: game.user.isGM,
       actor: this.actor,
       totalImages: imageCount(),
       thumbSize: Number(get(SETTINGS.THUMBNAIL_SIZE)) || 256,
-      emptyCount: categories().filter(c => !c.images.length).length,
+      emptyCount: categories().filter(c => !tokenCount(c)).length,
       hideEmpty: this.#hideEmpty,
       categories: categories()
-        .filter(c => !this.#hideEmpty || c.images.length || c.id === this.categoryId)
+        .filter(c => !this.#hideEmpty || tokenCount(c) || c.id === this.categoryId)
         .map(c => ({
         id: c.id,
         label: c.label,
-        count: c.images.length,
+        count: tokenCount(c),
         active: c.id === this.categoryId,
         readOnly: c.readOnly,
       })),
@@ -162,6 +165,7 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
         selected: this.#selection.has(image.path),
         readOnly: image.readOnly,
         untagged: !Object.keys(image.facets).length,
+        hasPortrait: !!image.portrait,
       })),
       matchCount: matches.length,
       shownCount: shown.length,
@@ -397,9 +401,12 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     if (!result) return;
 
     const { worldActor } = resolveActorTarget(actor);
-    ui.notifications?.info(result.touched
+    const message = result.touched
       ? game.i18n.format('STL.Info.AppliedToActorAndTokens', { name: worldActor.name, count: result.touched })
-      : game.i18n.format('STL.Info.AppliedToActor', { name: worldActor.name }));
+      : result.portrait
+        ? game.i18n.format('STL.Info.AppliedToActorWithPortrait', { name: worldActor.name })
+        : game.i18n.format('STL.Info.AppliedToActor', { name: worldActor.name });
+    ui.notifications?.info(message);
     this.render();
   }
 

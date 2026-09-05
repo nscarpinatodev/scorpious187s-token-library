@@ -8,9 +8,15 @@
 
 import { LIB_ID } from '../constants.js';
 
-/** @returns {object|null} The lib's frozen API, or null if it is not active. */
+/**
+ * @returns {object|null} The lib's frozen API, or null if it is not active.
+ *
+ * Reached through globalThis because a bare `game?.` still throws when the
+ * identifier is undeclared rather than undefined — which is the case before
+ * Foundry sets it up, and anywhere this module is loaded outside Foundry.
+ */
 export function libApi() {
-  return game?.modules?.get(LIB_ID)?.api ?? null;
+  return globalThis.game?.modules?.get(LIB_ID)?.api ?? null;
 }
 
 /** @returns {boolean} True when the lib is installed and active. */

@@ -22,7 +22,7 @@ import { log } from '../logger.js';
 
 /** @returns {object|null} The Tokenizer 2 API, or null when unavailable. */
 export function api() {
-  const mod = game?.modules?.get(TOKENIZER_ID);
+  const mod = globalThis.game?.modules?.get(TOKENIZER_ID);
   if (!mod?.active) return null;
   return mod.api ?? globalThis.Tokenizer2 ?? null;
 }

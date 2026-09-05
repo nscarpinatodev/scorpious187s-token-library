@@ -26,7 +26,7 @@
 
 import { SETTINGS, RING_MODES, MODULE_ID, FLAGS } from '../constants.js';
 import { get, resolveRingEffects } from '../settings.js';
-import { globFor, images as libraryImages } from '../library/index.js';
+import { globFor, images as libraryImages, portraitFor } from '../library/index.js';
 import { ensureBaked, variantPathFor, pendingBakes, currentVariant } from './bake.js';
 import { encodePath } from '../storage/paths.js';
 import { saveSelection } from '../library/matching.js';
@@ -95,6 +95,27 @@ export async function updateForImage(image, { prefix = '' } = {}) {
   const update = { [`${prefix}texture.src`]: src };
   for (const [key, value] of Object.entries(ringFields(src))) update[`${prefix}${key}`] = value;
   return update;
+}
+
+/**
+ * The avatar update for an image, when a portrait is paired with it.
+ *
+ * Token art is a square crop crushed to 512px and clipped to a circle; the
+ * portrait it was cut from is the image an actor sheet actually wants. Pairing
+ * is worked out at index time (library/framing.js), so this is a lookup.
+ *
+ * Returns an empty object when there is no portrait, so the caller's update
+ * simply does not mention `img` and whatever the actor has is left alone.
+ *
+ * @param {object} image
+ * @returns {Record<string, string>}
+ */
+export function avatarUpdate(image) {
+  if (!get(SETTINGS.APPLY_PORTRAIT)) return {};
+  const portrait = portraitFor(image);
+  if (!portrait) return {};
+  // Raw art, not a baked variant: an actor portrait wants no ring and no frame.
+  return { img: encodePath(portrait.path) };
 }
 
 /**
@@ -194,7 +215,11 @@ export async function applyToActor(actor, selection, { updatePlaced = true } = {
   const pinned = file ? pool.find(i => i.path === file) : null;
   const representative = pinned ?? pool[Math.floor(Math.random() * pool.length)];
 
-  const update = await updateForImage(representative, { prefix: 'prototypeToken.' });
+  const avatar = avatarUpdate(representative);
+  const update = {
+    ...await updateForImage(representative, { prefix: 'prototypeToken.' }),
+    ...avatar,
+  };
 
   // A native glob is only possible for an unfiltered, single-directory,
   // single-extension set — and never for a pinned single image.
@@ -223,9 +248,10 @@ export async function applyToActor(actor, selection, { updatePlaced = true } = {
 
   log.debug(
     `applied ${categoryId} to "${worldActor.name}"`
-    + `${glob ? ` as wildcard ${glob}` : ''}${touched ? `, retextured ${touched} placed token(s)` : ''}`,
+    + `${glob ? ` as wildcard ${glob}` : ''}${touched ? `, retextured ${touched} placed token(s)` : ''}`
+    + `${avatar.img ? ', avatar from paired portrait' : ''}`,
   );
-  return { update, touched };
+  return { update, touched, portrait: avatar.img ?? null };
 }
 
 /**
