@@ -120,13 +120,22 @@ export function facetsFor(categoryId) {
   const cat = category(categoryId);
   if (!cat) return [];
   const present = new Map();
+  // Only what the grid can actually show. Reading every image would offer values
+  // carried solely by portraits — which are filtered out of the pool, so those
+  // chips would select nothing.
   for (const image of cat.images) {
+    if (image.isPortrait) continue;
     for (const [facetId, values] of Object.entries(image.facets)) {
       if (!present.has(facetId)) present.set(facetId, new Set());
       for (const value of values) present.get(facetId).add(value);
     }
   }
   return state.facets
+    // Framing is structural rather than descriptive: the pool is already
+    // filtered by it, so every image the grid can show is token art and the
+    // chip could only ever be a no-op. It stays available in the tag panel,
+    // which is where marking an image as a portrait belongs.
+    .filter(f => f.id !== FRAMING_FACET)
     .filter(f => present.has(f.id))
     .map(f => ({
       id: f.id,

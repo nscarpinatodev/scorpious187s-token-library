@@ -95,6 +95,14 @@
       ]
     },
     {
+      "id": "faction",
+      "label": "Faction",
+      "values": [
+        "dragon-imperium",
+        "freewing-enclave"
+      ]
+    },
+    {
       "id": "framing",
       "label": "Framing",
       "values": [

@@ -152,6 +152,13 @@ categories with their name aliases, plus seven traits and their values. It only
 fills in what is missing, so it is safe to run on an existing library and safe
 to run twice. **Hide empty** collapses the categories you have no art for yet.
 
+Traits can also be specific to one collection rather than universal. The shipped
+library defines **Faction** (`dragon-imperium`, `freewing-enclave`) purely so the
+dragonrider art can be filtered by allegiance; it lives in `manifest.json` rather
+than the starter set, because those values mean nothing outside that art. Add
+your own the same way — a folder named after a trait value tags everything under
+it, so `art/knights/silver-order/` needs only `silver-order` added to a trait.
+
 You do not have to use traits at all. Categories alone give you "drop a
 Commoner, get a random commoner"; traits only earn their keep when one category
 needs to serve visibly different actors.
