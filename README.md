@@ -225,6 +225,23 @@ part of the library, and the folder scan will not pick them up again. **Restore
 Removed** brings a category's removed images back; deleting the files for real
 is a job for your file manager.
 
+## Encoding new art
+
+The library ships WebP; the PNG masters live in `storage/art-originals/`, which
+is gitignored and never packaged. `tools/encode-art.mjs` is what turns one into
+the other, reproducing the folder tree exactly — subfolders are traits, and
+filenames drive portrait pairing, so both have to survive the round trip.
+
+```bash
+npm install                      # once, for @napi-rs/canvas
+npm run encode-art -- storage/art-originals/dragonriders                       storage/art/dragonriders --apply
+```
+
+It dry-runs by default and reports what each file would become. Quality defaults
+to 96, chosen to match the fidelity of the art already in the library (~45 dB
+PSNR against the masters) rather than picked by eye — art encoded softer looks
+fine alone and wrong beside its neighbours.
+
 ## Storage and moving the library
 
 The default location is the module's own persistent storage, which Foundry
