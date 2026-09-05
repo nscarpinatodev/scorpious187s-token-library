@@ -18,14 +18,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # A semver pre-release tag carries a hyphen: v0.1.0-rc.1. Those are
+      # published as GitHub prereleases, and -- importantly -- their manifest
+      # points at the tag rather than at /releases/latest/, because the "latest"
+      # alias deliberately skips prereleases and would 404 for anyone Foundry
+      # sent there to check for updates.
       - name: Derive version from tag
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+        run: |
+          echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            echo "PRERELEASE=true" >> "$GITHUB_ENV"
+            echo "MANIFEST_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/module.json" >> "$GITHUB_ENV"
+          else
+            echo "PRERELEASE=false" >> "$GITHUB_ENV"
+            echo "MANIFEST_URL=https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/module.json" >> "$GITHUB_ENV"
+          fi
 
       - name: Patch module.json for this release
         run: |
           jq --arg version "$VERSION" \
              --arg url "https://github.com/${GITHUB_REPOSITORY}" \
-             --arg manifest "https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/module.json" \
+             --arg manifest "$MANIFEST_URL" \
              --arg download "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/module.zip" \
              '.version = $version | .url = $url | .manifest = $manifest | .download = $download' \
              module.json > module.json.tmp
@@ -42,6 +55,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
+          prerelease: ${{ env.PRERELEASE }}
           files: |
             module.json
             module.zip
