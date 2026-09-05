@@ -142,15 +142,42 @@ word "portrait".
 
 ## Categories vs traits
 
-Categories are **roles** — Guard, Bandit, Acolyte. Traits are everything else —
-race, gender, age, build, environment. That split matters: one pool of guard art
-usually has to serve elves and dwarves alike, and splitting the pool by species
-instead would mean re-cutting it every time a new species turns up.
+Categories are **what an NPC is** — Guard, Bandit, Acolyte — and they are what an
+actor's name is matched against. Traits are everything else: race, gender, age,
+build, environment. That split matters, because one pool of guard art usually has
+to serve elves and dwarves alike, and splitting the pool by species instead would
+mean re-cutting it every time a new species turns up.
+
+**Archetype** is the trait for what a figure *does* — archer, bruiser, scout,
+mage, healer. The category already says "bandit"; archetype says which kind, so
+one pool can furnish an ambush of five archers and a brawl of five bruisers
+without becoming five separate categories. Most of its values match no shipped
+art yet and are there as vocabulary to tag with; unused values never appear as
+filter chips, which only ever offer what a category actually holds.
 
 The **starter set** button in the sidebar adds 69 common D&D and Pathfinder NPC
-categories with their name aliases, plus seven traits and their values. It only
+categories with their name aliases, plus the traits and their values. It only
 fills in what is missing, so it is safe to run on an existing library and safe
 to run twice. **Hide empty** collapses the categories you have no art for yet.
+
+### Adding your own traits
+
+**Add Trait** in the tag panel — or the pencil beside a category — opens the
+category and trait editor. **Add Trait** creates a new dimension (`allegiance`,
+`mount`, `era`); the field beside each existing trait adds a value to it. Nothing
+here needs the manifest opened by hand.
+
+A new trait starts working the moment it exists: the folder scan matches folder
+names against every known trait value, so adding `silver-order` to a trait
+retroactively tags everything already sitting in `art/knights/silver-order/`. No
+files move and no re-import is needed.
+
+One rule to know when a trait appears in both places: **a folder wins over the
+filename for that trait, and replaces it rather than adding to it.** That is what
+stops `art/commoner/elf/female/x-human-male.webp` from claiming to be both elf
+and human — but it also means a filename's extra value for a trait the folder
+already sets is discarded. Put a trait in the folders or in the filenames, not
+half in each.
 
 Traits can also be specific to one collection rather than universal. The shipped
 library defines **Faction** (`dragon-imperium`, `freewing-enclave`) purely so the

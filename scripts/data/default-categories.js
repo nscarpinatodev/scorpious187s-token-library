@@ -120,6 +120,22 @@ export const DEFAULT_FACETS = [
   { id: 'environment', label: 'Environment', values: ['urban', 'rural', 'wilderness', 'coastal', 'underground', 'desert', 'arctic'] },
   { id: 'armour', label: 'Armour', values: ['unarmoured', 'light', 'medium', 'heavy', 'robes'] },
   { id: 'mood', label: 'Mood', values: ['friendly', 'neutral', 'hostile', 'wary', 'wounded'] },
+  // What a figure does, as opposed to what it is. The category already says
+  // "bandit"; this says which kind, so one pool can serve an ambush of five
+  // archers and a brawl of five bruisers. Most values match no shipped art yet
+  // and are here as vocabulary for tagging -- unused values never reach the
+  // filter chips, which only offer what a category actually holds.
+  {
+    id: 'archetype',
+    label: 'Archetype',
+    values: [
+      'archer', 'bruiser', 'raider', 'rogue', 'scout', 'skirmisher',
+      'warrior', 'brute', 'duelist', 'berserker', 'sentry', 'hunter',
+      'tracker', 'spy', 'assassin', 'leader', 'recruit', 'mage',
+      'sorcerer', 'warlock', 'priest', 'druid', 'bard', 'monk',
+      'healer', 'alchemist',
+    ],
+  },
   // Framing is inferred from the filename and rarely set by hand, but it lives
   // here so a GM can mark art the name never declared — or rescue a token whose
   // name happens to contain "portrait".

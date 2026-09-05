@@ -95,6 +95,38 @@
       ]
     },
     {
+      "id": "archetype",
+      "label": "Archetype",
+      "values": [
+        "archer",
+        "bruiser",
+        "raider",
+        "rogue",
+        "scout",
+        "skirmisher",
+        "warrior",
+        "brute",
+        "duelist",
+        "berserker",
+        "sentry",
+        "hunter",
+        "tracker",
+        "spy",
+        "assassin",
+        "leader",
+        "recruit",
+        "mage",
+        "sorcerer",
+        "warlock",
+        "priest",
+        "druid",
+        "bard",
+        "monk",
+        "healer",
+        "alchemist"
+      ]
+    },
+    {
       "id": "faction",
       "label": "Faction",
       "values": [
