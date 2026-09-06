@@ -115,11 +115,30 @@ export const DEFAULT_FACETS = [
     ],
   },
   { id: 'gender', label: 'Gender', values: ['male', 'female'] },
-  { id: 'age', label: 'Age', values: ['child', 'young', 'adult', 'middle-aged', 'elderly'] },
+  {
+    id: 'age',
+    label: 'Age',
+    values: ['child', 'young', 'adult', 'mature', 'middle-aged', 'elderly', 'elder', 'veteran'],
+  },
   { id: 'build', label: 'Build', values: ['slight', 'average', 'stocky', 'muscular', 'heavy'] },
   { id: 'environment', label: 'Environment', values: ['urban', 'rural', 'wilderness', 'coastal', 'underground', 'desert', 'arctic'] },
   { id: 'armour', label: 'Armour', values: ['unarmoured', 'light', 'medium', 'heavy', 'robes'] },
-  { id: 'mood', label: 'Mood', values: ['friendly', 'neutral', 'hostile', 'wary', 'wounded'] },
+  {
+    id: 'mood',
+    label: 'Mood',
+    // The base five plus the expressions the shipped art actually names.
+    values: [
+      'friendly', 'neutral', 'hostile', 'wary', 'wounded',
+      'stern', 'skeptical', 'amused', 'joyful', 'grieving', 'defiant',
+      'serene', 'suspicious', 'terrified', 'delighted', 'alert', 'patient',
+      'curious', 'startled', 'mischievous', 'anxious', 'nervous', 'disciplined',
+      'sly', 'weary', 'powerful', 'calculating', 'severe', 'contemptuous',
+      'sorrowful', 'hopeful', 'jovial', 'cheerful', 'fierce', 'cocky',
+      'reckless', 'watchful', 'unimpressed', 'genial', 'bashful', 'proud',
+      'earnest', 'controlled', 'grim', 'audacious', 'intense', 'determined',
+      'boisterous', 'stoic', 'focused', 'embarrassed', 'angry',
+    ],
+  },
   // What a figure does, as opposed to what it is. The category already says
   // "bandit"; this says which kind, so one pool can serve an ambush of five
   // archers and a brawl of five bruisers. Most values match no shipped art yet

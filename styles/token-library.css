@@ -553,3 +553,98 @@
   background: var(--stl-bg-item);
   font-size: 0.85rem;
 }
+
+/* ── Trait editor ─────────────────────────────────────────────────────────── */
+
+.stl-trait-editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.stl-traits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.stl-trait {
+  border: 1px solid var(--stl-border);
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  background: var(--stl-bg-primary);
+}
+
+.stl-trait.locked { opacity: 0.75; }
+
+.stl-trait-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.stl-trait-head input[type="text"] { flex: 1; min-width: 0; }
+.stl-trait-id { max-width: 11rem; }
+
+.stl-trait-id-static {
+  min-width: 7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background: var(--stl-bg-secondary);
+  color: var(--stl-text-muted);
+  font-size: 0.8rem;
+}
+
+/* Total images carrying this trait — the number that says whether removing it matters. */
+.stl-trait-used {
+  min-width: 3rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--stl-text-muted);
+  font-size: 0.8rem;
+}
+
+.stl-trait-remove { flex: 0 0 auto; }
+
+.stl-trait-values,
+.stl-trait-stray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.stl-trait-stray {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--stl-border);
+}
+
+.stl-chip-count {
+  margin-left: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+/* A value nothing carries: still valid, just not earning its place yet. */
+.stl-chip-static.unused { opacity: 0.55; }
+
+.stl-chip-stray {
+  border-style: dashed;
+  opacity: 0.8;
+}
+
+.stl-trait-add {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.stl-trait-add input { flex: 1; min-width: 0; }

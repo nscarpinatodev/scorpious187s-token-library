@@ -35,6 +35,10 @@
                 data-tooltip="{{localize 'STL.Browser.SeedDefaultsHint'}}">
           <i class="fas fa-list-check"></i>
         </button>
+        <button type="button" data-action="editTraits"
+                data-tooltip="{{localize 'STL.Traits.Title'}}">
+          <i class="fas fa-tags"></i>
+        </button>
         <button type="button" data-action="refresh" data-tooltip="{{localize 'STL.Browser.RefreshHint'}}">
           <i class="fas fa-rotate"></i>
         </button>
@@ -184,8 +188,8 @@
             {{/each}}
 
             <div class="stl-tag-actions">
-              <button type="button" data-action="editCategory">
-                <i class="fas fa-plus"></i> {{localize "STL.Category.AddFacet"}}
+              <button type="button" data-action="editTraits">
+                <i class="fas fa-plus"></i> {{localize "STL.Traits.AddTrait"}}
               </button>
               {{#if tagsTouched}}
                 <button type="button" data-action="resetTags">{{localize "STL.Tag.Reset"}}</button>
@@ -198,8 +202,8 @@
             </div>
           {{else}}
             <span class="stl-hint-inline">{{localize "STL.Tag.NoFacets"}}</span>
-            <button type="button" data-action="editCategory">
-              <i class="fas fa-plus"></i> {{localize "STL.Category.AddFacet"}}
+            <button type="button" data-action="editTraits">
+              <i class="fas fa-plus"></i> {{localize "STL.Traits.AddTrait"}}
             </button>
           {{/if}}
         </div>

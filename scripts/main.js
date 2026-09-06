@@ -25,6 +25,7 @@ import { framesDir, source } from './storage/paths.js';
 import { registerAutoApply } from './hooks/auto-apply.js';
 import { openBrowser, TokenLibraryBrowser } from './apps/browser.js';
 import { CategoryEditor } from './apps/category-editor.js';
+import { TraitEditor } from './apps/trait-editor.js';
 import { ImportDialog } from './apps/import-dialog.js';
 import { registerFrameSource, available as tokenizerAvailable } from './integrations/tokenizer2.js';
 import { libApi } from './integrations/lib.js';
@@ -85,7 +86,8 @@ Hooks.once('ready', async () => {
 
   const lib = libApi();
   await lib.utils.preloadTemplates(MODULE_ID, [
-    'browser.hbs', 'category-editor.hbs', 'import-dialog.hbs', 'bake-progress.hbs',
+    'browser.hbs', 'category-editor.hbs', 'trait-editor.hbs', 'import-dialog.hbs',
+    'bake-progress.hbs',
   ]);
 
   noteCurrentPath();
@@ -122,6 +124,7 @@ Hooks.once('ready', async () => {
     openBrowser,
     TokenLibraryBrowser,
     CategoryEditor,
+    TraitEditor,
     ImportDialog,
     library: { build, categories, category, imageCount, isBuilt, seedDefaults },
     matching: { matchCategory, savedSelection },

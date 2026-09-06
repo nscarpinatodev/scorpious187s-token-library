@@ -99,6 +99,30 @@ export function tokenCount(cat) {
 }
 
 /**
+ * How many images carry each value of each trait.
+ *
+ * The trait editor needs this to be honest: removing a value that nothing uses
+ * is housekeeping, removing one that four hundred images carry is destructive,
+ * and the two look identical without a count. Portraits are included, because a
+ * tag on a portrait is still a tag someone would lose.
+ *
+ * @returns {Map<string, Map<string, number>>} facetId → value → image count
+ */
+export function facetUsage() {
+  const usage = new Map();
+  for (const cat of state.categories.values()) {
+    for (const image of cat.images) {
+      for (const [facetId, values] of Object.entries(image.facets)) {
+        if (!usage.has(facetId)) usage.set(facetId, new Map());
+        const counts = usage.get(facetId);
+        for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
+      }
+    }
+  }
+  return usage;
+}
+
+/**
  * The portrait paired with an image, or null.
  * Resolved at build time; this is just the lookup.
  * @param {LibraryImage|null} image

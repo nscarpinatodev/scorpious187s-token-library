@@ -1,0 +1,96 @@
+{{!--
+  Trait editor. One row per trait: its name, its values, and how many images
+  carry each — so removing something destructive looks different from removing
+  something unused.
+--}}
+<div class="stl-trait-editor-body">
+
+  <p class="hint">{{localize "STL.Traits.Hint"}}</p>
+
+  <div class="stl-traits">
+    {{#each traits}}
+      <section class="stl-trait{{#if this.locked}} locked{{/if}}">
+
+        <header class="stl-trait-head">
+          {{#if this.isNew}}
+            <input type="text" name="traits.{{this.index}}.id" value="{{this.id}}"
+                   placeholder="{{localize 'STL.Traits.IdPlaceholder'}}" class="stl-trait-id">
+          {{else}}
+            <code class="stl-trait-id-static"
+                  data-tooltip="{{localize 'STL.Traits.IdFixed'}}">{{this.id}}</code>
+          {{/if}}
+
+          <input type="text" name="traits.{{this.index}}.label" value="{{this.label}}"
+                 placeholder="{{localize 'STL.Traits.LabelPlaceholder'}}"
+                 {{#if this.locked}}readonly{{/if}}>
+
+          <span class="stl-trait-used" data-tooltip="{{localize 'STL.Traits.UsedHint'}}">
+            {{this.used}}
+          </span>
+
+          {{#unless this.locked}}
+            <button type="button" class="stl-trait-remove" data-action="removeTrait"
+                    data-index="{{this.index}}"
+                    data-tooltip="{{localize 'STL.Traits.RemoveTrait'}}">
+              <i class="fas fa-trash"></i>
+            </button>
+          {{/unless}}
+        </header>
+
+        <div class="stl-trait-values">
+          {{#each this.values}}
+            <span class="stl-chip stl-chip-static{{#if this.count}}{{else}} unused{{/if}}">
+              {{this.value}}
+              <span class="stl-chip-count">{{this.count}}</span>
+              <button type="button" class="stl-chip-remove" data-action="removeValue"
+                      data-index="{{../index}}" data-value="{{this.value}}"
+                      data-count="{{this.count}}"
+                      data-tooltip="{{localize 'STL.Common.Remove'}}">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </span>
+          {{else}}
+            <span class="stl-hint-inline">{{localize "STL.Traits.NoValues"}}</span>
+          {{/each}}
+        </div>
+
+        {{#if this.hasStray}}
+          {{!-- Values that images carry but the trait does not list, usually
+                introduced by a folder or filename. Adopting one makes it a
+                filter chip. --}}
+          <div class="stl-trait-stray">
+            <span class="stl-hint-inline">{{localize "STL.Traits.Stray"}}</span>
+            {{#each this.stray}}
+              <span class="stl-chip stl-chip-stray">{{this.value}}
+                <span class="stl-chip-count">{{this.count}}</span>
+              </span>
+            {{/each}}
+          </div>
+        {{/if}}
+
+        {{#unless this.locked}}
+          <div class="stl-trait-add">
+            <input type="text" data-new-value="{{this.index}}"
+                   placeholder="{{localize 'STL.Traits.NewValuePlaceholder'}}">
+            <button type="button" data-action="addValue" data-index="{{this.index}}">
+              <i class="fas fa-plus"></i> {{localize "STL.Traits.AddValue"}}
+            </button>
+          </div>
+        {{/unless}}
+
+      </section>
+    {{else}}
+      <p class="stl-empty">{{localize "STL.Traits.NoTraits"}}</p>
+    {{/each}}
+  </div>
+
+  <footer class="stl-editor-actions">
+    <button type="button" data-action="addTrait">
+      <i class="fas fa-plus"></i> {{localize "STL.Traits.AddTrait"}}
+    </button>
+    <button type="submit" class="stl-primary">
+      <i class="fas fa-floppy-disk"></i> {{localize "STL.Common.Save"}}
+    </button>
+  </footer>
+
+</div>

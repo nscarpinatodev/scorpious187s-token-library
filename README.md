@@ -162,10 +162,23 @@ to run twice. **Hide empty** collapses the categories you have no art for yet.
 
 ### Adding your own traits
 
-**Add Trait** in the tag panel — or the pencil beside a category — opens the
-category and trait editor. **Add Trait** creates a new dimension (`allegiance`,
-`mount`, `era`); the field beside each existing trait adds a value to it. Nothing
-here needs the manifest opened by hand.
+The **tag icon** in the sidebar opens the trait editor — every trait in the
+world, on its own terms rather than buried inside one category's settings.
+
+**Add Trait** creates a new dimension (`origin`, `house`, `guild`, `era`); the
+box under each trait adds values, and accepts a comma-separated list so a whole
+vocabulary can be pasted in at once. Nothing here needs the manifest opened by
+hand.
+
+Beside every value is **the number of images carrying it**, which is the number
+that matters when deciding what to remove: a value on nothing is housekeeping, a
+value on four hundred images is not, and the two look identical without it.
+Removing either asks first. A trait's id is fixed once created, because images
+are tagged against it — the label is free to change.
+
+Values that images carry but the trait does not list are shown separately as
+*also found on images*. Those usually arrived from a folder or filename; adding
+one to the trait promotes it to a filter chip.
 
 A new trait starts working the moment it exists: the folder scan matches folder
 names against every known trait value, so adding `silver-order` to a trait

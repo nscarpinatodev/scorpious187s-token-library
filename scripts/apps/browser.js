@@ -58,6 +58,7 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
       addImages:       TokenLibraryBrowser.#onAddImages,
       addCategory:     TokenLibraryBrowser.#onAddCategory,
       editCategory:    TokenLibraryBrowser.#onEditCategory,
+      editTraits:      TokenLibraryBrowser.#onEditTraits,
       refresh:         TokenLibraryBrowser.#onRefresh,
       seedDefaults:    TokenLibraryBrowser.#onSeedDefaults,
       toggleEmpty:     TokenLibraryBrowser.#onToggleEmpty,
@@ -459,6 +460,12 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
   static async #onEditCategory() {
     const { CategoryEditor } = await import('./category-editor.js');
     new CategoryEditor({ categoryId: this.categoryId, browser: this }).render(true);
+  }
+
+  /** The world's trait vocabulary, edited on its own terms rather than a category's. */
+  static async #onEditTraits() {
+    const { TraitEditor } = await import('./trait-editor.js');
+    new TraitEditor({ browser: this }).render(true);
   }
 
   static async #onRefresh() {
