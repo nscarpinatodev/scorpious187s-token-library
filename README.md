@@ -180,15 +180,15 @@ already sets is discarded. Put a trait in the folders or in the filenames, not
 half in each.
 
 Traits can also be specific to one world rather than universal. The shipped
-library defines **Faction** (`dragon-imperium`, `freewing-enclave`) and **Origin**
-(`western-reach`, `northside-heights`) — allegiance and where someone is from.
-Both live in `manifest.json` rather than the starter set, because proper nouns
-mean nothing in anyone else's setting; replace the values with your own.
+library defines **Faction** (`dragon-imperium`, `freewing-enclave`, naming the two
+dragonrider sets it ships) and **Origin**, which ships deliberately **empty** —
+it is where someone is from, and only you know what the places in your setting
+are called. Add your values in the trait editor and it starts working.
 
 Origin is what makes "the people of the Western Reach" a filter rather than a
-second actor. Note it is not the same as **Environment**, which holds terrain
+second actor. It is not the same as **Environment**, which holds terrain
 (`coastal`, `desert`) — a place name and a kind of place are different questions,
-and you may well want both.
+and you may want both.
 
 Keep such vocabularies as separate traits rather than one lumped "affiliation",
 because the filter semantics reward it: values within a trait are OR-ed, values

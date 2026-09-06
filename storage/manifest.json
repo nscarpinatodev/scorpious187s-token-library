@@ -129,10 +129,7 @@
     {
       "id": "origin",
       "label": "Origin",
-      "values": [
-        "western-reach",
-        "northside-heights"
-      ]
+      "values": []
     },
     {
       "id": "faction",
