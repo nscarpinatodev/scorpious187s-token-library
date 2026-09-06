@@ -127,6 +127,14 @@
       ]
     },
     {
+      "id": "origin",
+      "label": "Origin",
+      "values": [
+        "western-reach",
+        "northside-heights"
+      ]
+    },
+    {
       "id": "faction",
       "label": "Faction",
       "values": [

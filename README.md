@@ -179,12 +179,26 @@ and human — but it also means a filename's extra value for a trait the folder
 already sets is discarded. Put a trait in the folders or in the filenames, not
 half in each.
 
-Traits can also be specific to one collection rather than universal. The shipped
-library defines **Faction** (`dragon-imperium`, `freewing-enclave`) purely so the
-dragonrider art can be filtered by allegiance; it lives in `manifest.json` rather
-than the starter set, because those values mean nothing outside that art. Add
-your own the same way — a folder named after a trait value tags everything under
-it, so `art/knights/silver-order/` needs only `silver-order` added to a trait.
+Traits can also be specific to one world rather than universal. The shipped
+library defines **Faction** (`dragon-imperium`, `freewing-enclave`) and **Origin**
+(`western-reach`, `northside-heights`) — allegiance and where someone is from.
+Both live in `manifest.json` rather than the starter set, because proper nouns
+mean nothing in anyone else's setting; replace the values with your own.
+
+Origin is what makes "the people of the Western Reach" a filter rather than a
+second actor. Note it is not the same as **Environment**, which holds terrain
+(`coastal`, `desert`) — a place name and a kind of place are different questions,
+and you may well want both.
+
+Keep such vocabularies as separate traits rather than one lumped "affiliation",
+because the filter semantics reward it: values within a trait are OR-ed, values
+across traits are AND-ed. Separate traits let you ask for *Freewing Enclave **and**
+from the Western Reach*; a single trait could only offer *Freewing **or** Western
+Reach*, which is not a question anyone asks.
+
+Add your own the same way — a folder named after a trait value tags everything
+under it, so `art/knights/silver-order/` needs only `silver-order` added to a
+trait.
 
 You do not have to use traits at all. Categories alone give you "drop a
 Commoner, get a random commoner"; traits only earn their keep when one category
