@@ -476,10 +476,17 @@ export function overlay() {
   return state.overlay;
 }
 
-/** Persist the overlay and rebuild the index. */
+/**
+ * Persist the overlay and rebuild the index.
+ *
+ * Throws when the write fails. Carrying on would rebuild from the old file on
+ * disk, so the edit vanished while every caller reported success — and an
+ * editor's form handler only stays open on a throw.
+ */
 export async function commit(manifest) {
+  const saved = await saveOverlay(manifest);
+  if (!saved) throw new Error(game.i18n.localize('STL.Warn.SaveFailed'));
   state.overlay = manifest;
-  await saveOverlay(manifest);
   await build();
 }
 
@@ -536,10 +543,12 @@ export function draftOverlay() {
  * @param {string[]} paths  Full paths of the images to tag.
  * @param {Record<string,string[]>} assignments  facetId → values. An empty
  *        array clears that trait on the selected images.
+ * @returns {Promise<{tagged: number, skipped: number}>} Images written, and
+ *          art-pack images left alone because they are read-only.
  */
 export async function setImageFacets(categoryId, paths, assignments) {
   const cat = category(categoryId);
-  if (!cat || !paths.length) return;
+  if (!cat || !paths.length) return { tagged: 0, skipped: 0 };
 
   const draft = draftOverlay();
   const entry = ensureOverlayCategory(draft, categoryId);
@@ -554,17 +563,25 @@ export async function setImageFacets(categoryId, paths, assignments) {
     }
   }
 
+  let tagged = 0;
+  let skipped = 0;
   for (const image of cat.images) {
     if (!targets.has(image.path)) continue;
-    if (image.readOnly) continue; // Art-pack images are not ours to rewrite.
+    // Art-pack images are not ours to rewrite.
+    if (image.readOnly) {
+      skipped++;
+      continue;
+    }
     const record = overlayRecordFor(entry, image);
     for (const [facetId, values] of Object.entries(assignments)) {
       if (values?.length) record.facets[facetId] = [...new Set(values)];
       else delete record.facets[facetId];
     }
+    tagged++;
   }
 
   await commit(draft);
+  return { tagged, skipped };
 }
 
 /**

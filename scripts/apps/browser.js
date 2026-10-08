@@ -21,7 +21,8 @@ import {
   imageCount, isBuilt, build, setImageFacets, removeImages, restoreRemoved, seedDefaults,
   tokenCount,
 } from '../library/index.js';
-import { libApi } from '../integrations/lib.js';
+import { confirmDialog } from '../integrations/lib.js';
+import { openOnce } from './shared.js';
 import { encodePath } from '../storage/paths.js';
 import { savedSelection } from '../library/matching.js';
 import { applyToActor, applyToTokens, ringMode, resolveActorTarget } from '../ring/apply.js';
@@ -248,13 +249,30 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     if (current.size) this.#filter[facetId] = [...current];
     else delete this.#filter[facetId];
     this.#visible = PAGE_SIZE;
+    this.#pruneSelection();
     this.render();
   }
 
   static #onClearFilters() {
     this.#filter = {};
     this.#visible = PAGE_SIZE;
+    this.#pruneSelection();
     this.render();
+  }
+
+  /**
+   * Drop selected images the filter now hides.
+   *
+   * Tagging and removal act on the selection, so anything selected but no
+   * longer visible would be changed without the GM being able to see it.
+   */
+  #pruneSelection() {
+    const visible = new Set(this.matches.map(image => image.path));
+    const kept = [...this.#selection].filter(path => visible.has(path));
+    if (kept.length === this.#selection.size) return;
+    this.#selection = new Set(kept);
+    // Staged values were seeded from the old selection's shared tags.
+    this.#tagDraft.clear();
   }
 
   static #onSelectImage(event, target) {
@@ -321,10 +339,16 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     );
 
     const paths = [...this.#selection];
-    await setImageFacets(this.categoryId, paths, assignments);
+    const result = await reportFailure(setImageFacets(this.categoryId, paths, assignments));
+    if (!result) return;
     this.#tagDraft.clear();
-    ui.notifications?.info(game.i18n.format('STL.Tag.Applied', { count: paths.length }));
-    log.log(`tagged ${paths.length} image(s) in "${this.categoryId}"`);
+    if (result.tagged) {
+      ui.notifications?.info(game.i18n.format('STL.Tag.Applied', { count: result.tagged }));
+    }
+    if (result.skipped) {
+      ui.notifications?.warn(game.i18n.format('STL.Tag.SkippedReadOnly', { count: result.skipped }));
+    }
+    log.log(`tagged ${result.tagged} image(s) in "${this.categoryId}"`);
     this.render();
   }
 
@@ -351,14 +375,14 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
     );
     if (!confirmed) return;
 
-    await removeImages(this.categoryId, paths);
+    if (!await reportFailure(removeImages(this.categoryId, paths).then(() => true))) return;
     this.#selection.clear();
     ui.notifications?.info(game.i18n.format('STL.Remove.Done', { count: paths.length }));
     this.render();
   }
 
   static async #onRestoreRemoved() {
-    await restoreRemoved(this.categoryId);
+    await reportFailure(restoreRemoved(this.categoryId));
     this.render();
   }
 
@@ -449,23 +473,27 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
 
   static async #onAddImages() {
     const { ImportDialog } = await import('./import-dialog.js');
-    new ImportDialog({ categoryId: this.categoryId, browser: this }).render(true);
+    openOnce(ImportDialog, {
+      id: `stl-import-${this.categoryId}`, categoryId: this.categoryId, browser: this,
+    });
   }
 
   static async #onAddCategory() {
     const { CategoryEditor } = await import('./category-editor.js');
-    new CategoryEditor({ browser: this }).render(true);
+    openOnce(CategoryEditor, { id: CategoryEditor.idFor(null), browser: this });
   }
 
   static async #onEditCategory() {
     const { CategoryEditor } = await import('./category-editor.js');
-    new CategoryEditor({ categoryId: this.categoryId, browser: this }).render(true);
+    openOnce(CategoryEditor, {
+      id: CategoryEditor.idFor(this.categoryId), categoryId: this.categoryId, browser: this,
+    });
   }
 
   /** The world's trait vocabulary, edited on its own terms rather than a category's. */
   static async #onEditTraits() {
     const { TraitEditor } = await import('./trait-editor.js');
-    new TraitEditor({ browser: this }).render(true);
+    openOnce(TraitEditor, { browser: this });
   }
 
   static async #onRefresh() {
@@ -475,7 +503,8 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
 
   /** Merge the shipped D&D/Pathfinder starter categories and traits. */
   static async #onSeedDefaults() {
-    const added = await seedDefaults();
+    const added = await reportFailure(seedDefaults());
+    if (!added) return;
     ui.notifications?.info(game.i18n.format('STL.Browser.SeededDefaults', added));
     this.render();
   }
@@ -493,14 +522,22 @@ export class TokenLibraryBrowser extends HandlebarsApplicationMixin(ApplicationV
   }
 }
 
-/** Confirmation dialog, preferring the lib's shared helper. */
-async function confirmDialog(title, content) {
-  const dialogs = libApi()?.utils?.dialogs;
-  if (dialogs?.confirm) return dialogs.confirm(title, content);
-  const result = await foundry.applications.api.DialogV2.confirm({
-    window: { title }, content, rejectClose: false,
-  });
-  return result === true;
+/**
+ * Await a library write, turning a failure into a notification.
+ *
+ * Action handlers are not awaited by Foundry, so a throw from one — a manifest
+ * that could not be saved — would otherwise only surface as an unhandled
+ * rejection in the console.
+ * @returns {Promise<any|null>} The result, or null when it failed.
+ */
+async function reportFailure(promise) {
+  try {
+    return await promise;
+  } catch (err) {
+    ui.notifications?.error(err?.message ?? String(err));
+    log.error(err);
+    return null;
+  }
 }
 
 /** Human-readable trait summary for a thumbnail tooltip. */

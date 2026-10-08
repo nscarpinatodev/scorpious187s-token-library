@@ -5,16 +5,22 @@
  * of the `race` facet, so one editor handles any trait dimension the GM wants
  * to filter on. Edits are made against a working copy of the overlay manifest
  * and only committed on save.
+ *
+ * The trait section follows the trait editor's rules: an existing trait's id
+ * is fixed, because images are tagged against it and renaming it here would
+ * orphan every one of those tags; and framing is locked outright, because it
+ * decides which images count as portraits.
  */
 
-import { MODULE_ID } from '../constants.js';
+import { MODULE_ID, FRAMING_FACET } from '../constants.js';
 import {
-  category, categories, facets as allFacets, draftOverlay, commit,
+  category, facets as allFacets, draftOverlay, commit,
   ensureOverlayCategory, ensureOverlayFacet,
 } from '../library/index.js';
 import { ensureDir } from '../storage/files.js';
 import { artDir, source, slugify } from '../storage/paths.js';
-import { libApi } from '../integrations/lib.js';
+import { confirmDialog } from '../integrations/lib.js';
+import { splitList, bindValueInputs, pendingValues } from './shared.js';
 import { log } from '../logger.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -36,11 +42,16 @@ export class CategoryEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    body: { template: `modules/${MODULE_ID}/templates/category-editor.hbs`, scrollable: [''] },
+    body: { template: `modules/${MODULE_ID}/templates/category-editor.hbs`, scrollable: ['.stl-editor-scroll'] },
   };
 
+  /** One window per category, plus one for "new", so they never share a DOM id. */
+  static idFor(categoryId) {
+    return `stl-category-editor-${categoryId || 'new'}`;
+  }
+
   constructor(options = {}) {
-    super(options);
+    super({ id: CategoryEditor.idFor(options.categoryId), ...options });
     this.categoryId = options.categoryId ?? null;
     this.browser = options.browser ?? null;
   }
@@ -53,18 +64,26 @@ export class CategoryEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     return this.#draft;
   }
 
+  /**
+   * Working copy of the traits: `[{ id, label, values, isNew }]`.
+   * Seeded from the live traits, which include any an art pack contributed.
+   * @type {Array<object>|null}
+   */
+  #traits = null;
+
+  get traits() {
+    this.#traits ??= allFacets().map(f => ({
+      id: f.id, label: f.label, values: [...f.values], isNew: false,
+    }));
+    return this.#traits;
+  }
+
   get isNew() {
     return !this.categoryId;
   }
 
   async _prepareContext() {
     const existing = this.categoryId ? category(this.categoryId) : null;
-
-    // Seed the draft from the live facets the first time the editor opens, so
-    // an existing library is editable rather than appearing empty.
-    if (!this.draft.facets.length) {
-      this.draft.facets = allFacets().map(f => ({ ...f, values: [...f.values] }));
-    }
 
     return {
       isNew: this.isNew,
@@ -74,55 +93,56 @@ export class CategoryEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       creatureTypes: (existing?.match.creatureTypes ?? []).join(', '),
       imageCount: existing?.images.length ?? 0,
       readOnly: existing?.readOnly ?? false,
-      facets: this.draft.facets.map(f => ({ ...f, valuesText: f.values.join(', ') })),
-      knownCategories: categories().map(c => c.label).join(', '),
+      facets: this.traits.map((trait, index) => ({
+        ...trait,
+        index,
+        locked: trait.id === FRAMING_FACET,
+      })),
     };
   }
 
-  /** Pull the form into the draft so re-renders do not lose typing. */
+  _onRender(context, options) {
+    super._onRender?.(context, options);
+    bindValueInputs(this.element);
+  }
+
+  /** Pull typed-in ids and labels back into the working copy so re-renders do not lose them. */
   #syncFromForm() {
     const form = this.element;
     if (!form) return;
     const data = foundry.utils.expandObject(new foundry.applications.ux.FormDataExtended(form).object);
-
-    const rows = data.facets ?? {};
-    this.draft.facets = Object.keys(rows)
-      .sort((a, b) => Number(a) - Number(b))
-      .map(index => {
-        const row = rows[index];
-        const id = slugify(row.id);
-        if (!id) return null;
-        return {
-          id,
-          label: String(row.label || id).trim(),
-          values: splitList(row.values),
-        };
-      })
-      .filter(Boolean);
+    for (const [index, row] of Object.entries(data.facets ?? {})) {
+      const trait = this.traits[Number(index)];
+      if (!trait) continue;
+      if (trait.isNew) trait.id = slugify(row.id ?? '');
+      if (trait.id !== FRAMING_FACET) trait.label = String(row.label ?? '').trim();
+    }
   }
 
   static #onAddFacet() {
     this.#syncFromForm();
-    this.draft.facets.push({ id: '', label: '', values: [] });
+    this.traits.push({ id: '', label: '', values: [], isNew: true });
     this.render();
   }
 
   static #onAddFacetValue(event, target) {
     this.#syncFromForm();
-    const facet = this.draft.facets[Number(target.dataset.index)];
-    if (!facet) return;
-    const input = this.element.querySelector(`[data-new-value="${target.dataset.index}"]`);
-    const value = String(input?.value ?? '').trim();
-    if (!value) return;
-    if (!facet.values.includes(value)) facet.values.push(value);
+    const index = Number(target.dataset.index);
+    const trait = this.traits[index];
+    if (!trait || trait.id === FRAMING_FACET) return;
+    const added = pendingValues(this.element).get(index) ?? [];
+    if (!added.length) return;
+    for (const value of added) {
+      if (!trait.values.includes(value)) trait.values.push(value);
+    }
     this.render();
   }
 
   static #onRemoveFacetValue(event, target) {
     this.#syncFromForm();
-    const facet = this.draft.facets[Number(target.dataset.index)];
-    if (!facet) return;
-    facet.values = facet.values.filter(v => v !== target.dataset.value);
+    const trait = this.traits[Number(target.dataset.index)];
+    if (!trait || trait.id === FRAMING_FACET) return;
+    trait.values = trait.values.filter(v => v !== target.dataset.value);
     this.render();
   }
 
@@ -138,15 +158,23 @@ export class CategoryEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     );
     if (!confirmed) return;
 
-    this.#syncFromForm();
     const draft = this.draft;
     draft.categories = draft.categories.filter(c => c.id !== this.categoryId);
-    await commit(draft);
+    // An action, not the form handler, so nothing upstream reports a failure.
+    try {
+      await commit(draft);
+    } catch (err) {
+      ui.notifications?.error(err?.message ?? String(err));
+      return;
+    }
     log.log(`category "${this.categoryId}" removed from the manifest (files left on disk)`);
     await this.browser?.refresh();
     this.close();
   }
 
+  // Validation failures throw rather than return: Foundry only skips
+  // closeOnSubmit when the handler throws, so a plain return closed the editor
+  // and discarded the form.
   static async #onSubmit(event, form, formData) {
     this.#syncFromForm();
     const data = foundry.utils.expandObject(formData.object);
@@ -154,15 +182,35 @@ export class CategoryEditor extends HandlebarsApplicationMixin(ApplicationV2) {
 
     const label = String(data.label ?? '').trim();
     const id = this.categoryId ?? slugify(data.categoryId || label);
-    if (!id) {
-      ui.notifications?.error(game.i18n.localize('STL.Category.NeedName'));
-      return;
+    if (!id) throw new Error(game.i18n.localize('STL.Category.NeedName'));
+
+    // "New" must mean new: saving onto an existing id would silently replace
+    // that category's name and matching rules.
+    if (this.isNew && category(id)) {
+      throw new Error(game.i18n.format('STL.Category.IdTaken', { id }));
+    }
+
+    // A value typed but never added still counts.
+    for (const [index, values] of pendingValues(this.element)) {
+      const trait = this.traits[index];
+      if (!trait || trait.id === FRAMING_FACET) continue;
+      for (const value of values) if (!trait.values.includes(value)) trait.values.push(value);
+    }
+
+    const seen = new Set();
+    for (const trait of this.traits) {
+      if (!trait.id) continue;               // An unnamed new row is simply discarded.
+      if (seen.has(trait.id)) {
+        throw new Error(game.i18n.format('STL.Traits.DuplicateId', { id: trait.id }));
+      }
+      seen.add(trait.id);
     }
 
     // Facets first, so a category saved alongside a brand-new race value sees it.
-    for (const facet of draft.facets) {
-      const entry = ensureOverlayFacet(draft, facet.id, facet.label);
-      entry.values = [...new Set(facet.values)];
+    for (const trait of this.traits) {
+      if (!trait.id) continue;
+      const entry = ensureOverlayFacet(draft, trait.id, trait.label || trait.id);
+      entry.values = [...new Set(trait.values)];
     }
 
     const entry = ensureOverlayCategory(draft, id);
@@ -178,24 +226,4 @@ export class CategoryEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     log.log(`category "${id}" saved`);
     await this.browser?.refresh(id);
   }
-}
-
-/** Split a comma/newline separated field into trimmed, unique entries. */
-function splitList(value) {
-  return [...new Set(
-    String(value ?? '')
-      .split(/[,\n]/)
-      .map(part => part.trim())
-      .filter(Boolean),
-  )];
-}
-
-/** Confirmation dialog, preferring the lib's shared helper. */
-async function confirmDialog(title, content) {
-  const dialogs = libApi()?.utils?.dialogs;
-  if (dialogs?.confirm) return dialogs.confirm(title, content);
-  const result = await foundry.applications.api.DialogV2.confirm({
-    window: { title }, content, rejectClose: false,
-  });
-  return result === true;
 }

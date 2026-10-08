@@ -10,11 +10,11 @@
  */
 
 import { DIRS, RELOCATE_STATE_FILE, MANIFEST_FILE, MAX_TREE_DEPTH } from '../constants.js';
-import { root, source, join, framesDir, trimSlashes } from './paths.js';
+import { root, source, join, framesDir, trimSlashes, basename } from './paths.js';
 import {
   ensureDir, browse, browseImages, copyFiles, readJson, uploadJson,
 } from './files.js';
-import { libApi } from '../integrations/lib.js';
+import { confirmDialog } from '../integrations/lib.js';
 import { log } from '../logger.js';
 
 /** Create the directory skeleton if it is not already there. */
@@ -64,6 +64,31 @@ export async function planImageTree(
 }
 
 /**
+ * Drop entries whose file is already at its destination.
+ *
+ * This is what makes a resume a resume: without it, picking an interrupted
+ * move back up re-copied every file from the start, and a move that ended with
+ * a few failures could only be retried by repeating all of it.
+ *
+ * One listing per destination directory. `io` is injectable for tests.
+ * @param {Array<{from: string, dir: string, filename?: string}>} entries
+ * @returns {Promise<Array<{from: string, dir: string, filename?: string}>>}
+ */
+export async function skipExisting(entries, src, io = { browse }) {
+  const listings = new Map();
+  const remaining = [];
+  for (const entry of entries) {
+    if (!listings.has(entry.dir)) {
+      const { files } = await io.browse(src, entry.dir);
+      listings.set(entry.dir, new Set(files));
+    }
+    const target = join(entry.dir, entry.filename ?? basename(entry.from));
+    if (!listings.get(entry.dir).has(target)) remaining.push(entry);
+  }
+  return remaining;
+}
+
+/**
  * Enumerate every file that would need copying out of an old root.
  * @returns {Promise<Array<{from: string, dir: string}>>}
  */
@@ -91,19 +116,24 @@ async function planCopy(fromRoot, toRoot) {
  * @param {object} [options]
  * @param {(done: number, total: number) => void} [options.onProgress]
  * @param {() => boolean} [options.shouldStop]
+ * @param {boolean} [options.resume] Finishing an interrupted move: skip every
+ *        file already at the destination, the manifest included — it may have
+ *        been edited at the new root since the move began. A fresh move copies
+ *        everything, overwriting what is there, as it always has.
  */
-export async function relocate(fromRoot, { onProgress, shouldStop } = {}) {
+export async function relocate(fromRoot, { onProgress, shouldStop, resume = false } = {}) {
   const toRoot = root();
   if (trimSlashes(fromRoot) === trimSlashes(toRoot)) return { copied: [], failed: [] };
 
   await ensureLibraryTree();
-  const entries = await planCopy(fromRoot, toRoot);
+  const planned = await planCopy(fromRoot, toRoot);
+  const entries = resume ? await skipExisting(planned, source()) : planned;
   if (!entries.length) {
     log.log(`nothing to copy from ${fromRoot}`);
     return { copied: [], failed: [] };
   }
 
-  log.log(`relocating ${entries.length} file(s): ${fromRoot} → ${toRoot}`);
+  log.log(`relocating ${entries.length} of ${planned.length} file(s): ${fromRoot} → ${toRoot}`);
 
   // Record intent before starting, so an interrupted run can be resumed.
   await uploadJson(source(), toRoot, RELOCATE_STATE_FILE, {
@@ -112,6 +142,8 @@ export async function relocate(fromRoot, { onProgress, shouldStop } = {}) {
 
   const result = await copyFiles(entries, source(), { onProgress, shouldStop });
 
+  // Left unfinished on failure, so the next load offers to retry — and with
+  // skipExisting() that retry copies only what is still missing.
   if (result.failed.length) {
     log.warn(`relocation finished with ${result.failed.length} failure(s)`);
   } else {
@@ -123,32 +155,36 @@ export async function relocate(fromRoot, { onProgress, shouldStop } = {}) {
 
 /**
  * If a previous relocation was interrupted, offer to finish it.
- * Called on ready, GM only.
+ * Called once the module is ready, GM only, and not awaited there: the prompt
+ * waits on the GM, and the library should not.
+ * @returns {Promise<boolean>} True when files were copied, so the caller rebuilds.
  */
 export async function resumeInterruptedRelocation() {
   const state = await readJson(join(root(), RELOCATE_STATE_FILE));
-  if (!state?.fromRoot || state.completedAt) return;
+  if (!state?.fromRoot || state.completedAt) return false;
 
   const confirmed = await confirmDialog(
     game.i18n.localize('STL.Relocate.ResumeTitle'),
     game.i18n.format('STL.Relocate.ResumeMessage', { from: state.fromRoot, to: state.toRoot }),
   );
-  if (!confirmed) return;
+  if (!confirmed) return false;
 
-  await runWithProgress(state.fromRoot);
+  const result = await runWithProgress(state.fromRoot, { resume: true });
+  return result.copied.length > 0;
 }
 
 /**
  * Copy with a progress notification. Foundry's notification bar is enough here
  * — relocation is rare and the browser is usually not open during it.
  */
-export async function runWithProgress(fromRoot) {
+export async function runWithProgress(fromRoot, { resume = false } = {}) {
   let notification = ui.notifications?.info(
     game.i18n.format('STL.Relocate.Progress', { done: 0, total: '?' }),
     { permanent: true },
   );
 
   const result = await relocate(fromRoot, {
+    resume,
     onProgress: (done, total) => {
       if (done % 25 !== 0 && done !== total) return;
       if (notification?.remove) notification.remove();
@@ -160,18 +196,11 @@ export async function runWithProgress(fromRoot) {
   });
 
   if (notification?.remove) notification.remove();
-  ui.notifications?.info(game.i18n.format('STL.Relocate.Done', {
+  const done = game.i18n.format('STL.Relocate.Done', {
     count: result.copied.length,
     failed: result.failed.length,
-  }));
-  return result;
-}
-
-async function confirmDialog(title, content) {
-  const dialogs = libApi()?.utils?.dialogs;
-  if (dialogs?.confirm) return dialogs.confirm(title, content);
-  const result = await foundry.applications.api.DialogV2.confirm({
-    window: { title }, content, rejectClose: false,
   });
-  return result === true;
+  if (result.failed.length) ui.notifications?.warn(done);
+  else ui.notifications?.info(done);
+  return result;
 }

@@ -34,14 +34,28 @@ export function savedSelection(actor) {
   };
 }
 
-/** Persist a selection on an actor. Pass null to clear it. */
+/**
+ * Persist a selection on an actor. Pass null to clear it.
+ *
+ * The flag is replaced, never merged. setFlag() is a recursive update, so
+ * writing `facets: {race: [...]}` over a saved `{race, gender}` kept gender —
+ * a filter the GM had cleared went on restricting every future drop.
+ */
 export async function saveSelection(actor, selection) {
   if (!selection) return actor.unsetFlag(MODULE_ID, FLAGS.SELECTION);
-  return actor.setFlag(MODULE_ID, FLAGS.SELECTION, {
+  const value = {
     categoryId: selection.categoryId,
     facets: selection.facets ?? {},
     file: selection.file ?? null,
-  });
+  };
+
+  // v14 has an explicit replace operator; v13 gets the same result in two steps.
+  const ForcedReplacement = foundry.data?.operators?.ForcedReplacement;
+  if (ForcedReplacement) {
+    return actor.update({ [`flags.${MODULE_ID}.${FLAGS.SELECTION}`]: ForcedReplacement.create(value) });
+  }
+  if (actor.getFlag(MODULE_ID, FLAGS.SELECTION)) await actor.unsetFlag(MODULE_ID, FLAGS.SELECTION);
+  return actor.setFlag(MODULE_ID, FLAGS.SELECTION, value);
 }
 
 /** Word tokens of a name, lowercased. */

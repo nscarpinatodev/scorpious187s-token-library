@@ -92,10 +92,7 @@ Hooks.once('ready', async () => {
 
   noteCurrentPath();
 
-  if (game.user.isGM) {
-    await ensureLibraryTree();
-    await resumeInterruptedRelocation();
-  }
+  if (game.user.isGM) await ensureLibraryTree();
 
   await build();
 
@@ -131,6 +128,19 @@ Hooks.once('ready', async () => {
     apply: { applyToActor, applyToTokens, ringMode },
     storage: { ensureLibraryTree, relocate: runWithProgress },
   });
+
+  // Not awaited: the prompt waits on the GM, and startup should not. The
+  // library already works from whatever reached the new root; a finished
+  // resume just needs a rebuild to pick up the rest.
+  if (game.user.isGM) {
+    resumeInterruptedRelocation()
+      .then(async (copied) => {
+        if (!copied) return;
+        invalidateCache();
+        await build();
+      })
+      .catch(err => log.error('resuming the library move failed:', err));
+  }
 
   log.log(`Ready — ${categories().length} categories, ${imageCount()} images`);
 });

@@ -28,7 +28,7 @@ import { log } from '../logger.js';
  * Applies that could not be resolved synchronously, finished on create.
  * Keyed by actor rather than token id, because preCreateToken runs before the
  * token has one. FIFO per actor, which is correct for multi-drops.
- * @type {Array<{actorId: string, image: object}>}
+ * @type {Array<{actorId: string, image: object, source: 'selection'|'match'}>}
  */
 const deferred = [];
 
@@ -76,7 +76,7 @@ function onPreCreateToken(document, data, options, userId) {
   const src = encodePath(syncTexturePath(choice.image) ?? '') || null;
   if (!src) {
     // Processed variant not ready — finish asynchronously after create.
-    deferred.push({ actorId: actor.id, image: choice.image });
+    deferred.push({ actorId: actor.id, image: choice.image, source: choice.source });
     log.debug(`deferring frame-mode apply for "${actor.name}" (composite not baked)`);
     return;
   }
@@ -131,6 +131,9 @@ async function onCreateToken(document, options, userId) {
 
   try {
     const update = await updateForImage(pending.image);
+    // Same marker the synchronous path sets, so a deferred auto-apply is still
+    // recognised as ours and never fights a later manual change.
+    if (pending.source === 'match') update[`flags.${MODULE_ID}.${FLAGS.AUTO_APPLIED}`] = true;
     await document.update(update);
     log.debug(`completed deferred apply for "${document.name}"`);
   } catch (err) {

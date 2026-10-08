@@ -40,7 +40,7 @@ export class ImportDialog extends HandlebarsApplicationMixin(ApplicationV2) {
   };
 
   static PARTS = {
-    body: { template: `modules/${MODULE_ID}/templates/import-dialog.hbs`, scrollable: [''] },
+    body: { template: `modules/${MODULE_ID}/templates/import-dialog.hbs`, scrollable: ['.stl-editor-scroll'] },
   };
 
   constructor(options = {}) {
@@ -78,8 +78,9 @@ export class ImportDialog extends HandlebarsApplicationMixin(ApplicationV2) {
         index,
         name: entry.name,
         fromDisk: !!entry.path,
-        facets: Object.entries(inferFacets(entry.name, facets))
-          .map(([, value]) => value).join(' · '),
+        // Each trait can match several values, so these are arrays.
+        facets: Object.values(inferFacets(entry.name, facets))
+          .map(values => values.join(', ')).join(' · '),
       })),
       hasQueue: this.#queue.length > 0,
       facets,

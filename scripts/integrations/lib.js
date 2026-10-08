@@ -28,3 +28,17 @@ export function hasLib() {
 export function libUtils() {
   return libApi()?.utils ?? null;
 }
+
+/**
+ * Yes/no confirmation, preferring the lib's shared helper so the family's
+ * dialogs look alike, with core DialogV2 as the fallback.
+ * @returns {Promise<boolean>}
+ */
+export async function confirmDialog(title, content) {
+  const dialogs = libUtils()?.dialogs;
+  if (dialogs?.confirm) return dialogs.confirm(title, content);
+  const result = await foundry.applications.api.DialogV2.confirm({
+    window: { title }, content, rejectClose: false,
+  });
+  return result === true;
+}

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { planImageTree } from './relocate.js';
+import { planImageTree, skipExisting } from './relocate.js';
 
 /**
  * A fake file source, so the walk can be exercised without Foundry.
@@ -76,4 +76,23 @@ test('the walk stops at the shared depth limit', async () => {
   assert.ok(entries.length > 1, 'descends past the first level');
   assert.ok(entries.length < 11, 'does not walk the whole ten levels');
   assert.ok(!entries.some(e => e.from.endsWith('deepest.webp')));
+});
+
+test('a resume copies only what has not arrived yet', async () => {
+  // The bug this guards: resuming restarted the whole copy, so a move that
+  // failed on two files out of five hundred could only be retried in full.
+  const io = fakeIo({
+    [`${TO}/art/guard`]: ['a.webp'],
+  });
+  const entries = [
+    { from: `${FROM}/art/guard/a.webp`, dir: `${TO}/art/guard` },
+    { from: `${FROM}/art/guard/b.webp`, dir: `${TO}/art/guard` },
+    { from: `${FROM}/art/elf/c.webp`, dir: `${TO}/art/elf` },
+  ];
+
+  const remaining = await skipExisting(entries, 'data', io);
+  assert.deepEqual(remaining.map(e => e.from), [
+    `${FROM}/art/guard/b.webp`,
+    `${FROM}/art/elf/c.webp`,
+  ]);
 });

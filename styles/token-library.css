@@ -412,6 +412,24 @@
   flex-direction: column;
   gap: 10px;
   padding: 10px;
+  /* Shrinkable, so a tall form fits the window rather than overflowing it. */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/*
+ * Foundry caps every window at the viewport (.application max-height) and
+ * clips .window-content with overflow: hidden. An auto-height editor that
+ * outgrew the screen therefore lost its footer — and its Save button — with
+ * no scrollbar to reach it. The body scrolls instead; the footer stays put.
+ */
+.stl-editor-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .stl-fieldset {
@@ -444,6 +462,7 @@
 }
 
 .stl-facet-row:last-of-type { border-bottom: none; }
+.stl-facet-row.locked { opacity: 0.75; }
 
 .stl-facet-head,
 .stl-facet-add {
@@ -466,6 +485,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  flex: none;
 }
 
 .stl-editor-actions .stl-danger { margin-right: auto; }

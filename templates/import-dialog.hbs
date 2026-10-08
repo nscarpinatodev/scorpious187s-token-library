@@ -1,75 +1,80 @@
 <div class="stl-editor">
 
-  <p class="stl-meta">
-    {{localize "STL.Import.Target"}}: <strong>{{categoryLabel}}</strong>
-    {{#if targetDir}}<code>{{targetDir}}</code>{{/if}}
-  </p>
+  {{!-- Scrolls on its own so the Add button stays on screen. --}}
+  <div class="stl-editor-scroll">
 
-  {{#unless tokenizer}}
-    <p class="stl-warning">
-      <i class="fas fa-triangle-exclamation"></i> {{localize "STL.Import.NoTokenizer"}}
+    <p class="stl-meta">
+      {{localize "STL.Import.Target"}}: <strong>{{categoryLabel}}</strong>
+      {{#if targetDir}}<code>{{targetDir}}</code>{{/if}}
     </p>
-  {{/unless}}
 
-  <div class="stl-dropzone">
-    <i class="fas fa-cloud-arrow-up"></i>
-    <p>{{localize "STL.Import.DropHere"}}</p>
-    <div class="stl-dropzone-actions">
-      <button type="button" data-action="pickFiles">
-        <i class="fas fa-folder-open"></i> {{localize "STL.Import.PickFiles"}}
-      </button>
-      <button type="button" data-action="browseData">
-        <i class="fas fa-link"></i> {{localize "STL.Import.LinkExisting"}}
-      </button>
+    {{#unless tokenizer}}
+      <p class="stl-warning">
+        <i class="fas fa-triangle-exclamation"></i> {{localize "STL.Import.NoTokenizer"}}
+      </p>
+    {{/unless}}
+
+    <div class="stl-dropzone">
+      <i class="fas fa-cloud-arrow-up"></i>
+      <p>{{localize "STL.Import.DropHere"}}</p>
+      <div class="stl-dropzone-actions">
+        <button type="button" data-action="pickFiles">
+          <i class="fas fa-folder-open"></i> {{localize "STL.Import.PickFiles"}}
+        </button>
+        <button type="button" data-action="browseData">
+          <i class="fas fa-link"></i> {{localize "STL.Import.LinkExisting"}}
+        </button>
+      </div>
     </div>
+
+    {{#if hasQueue}}
+      <fieldset class="stl-fieldset">
+        <legend>{{localize "STL.Import.Queued"}} ({{queue.length}})</legend>
+        <ul class="stl-queue">
+          {{#each queue}}
+            <li>
+              <span class="stl-queue-name">
+                {{#if this.fromDisk}}<i class="fas fa-link" data-tooltip="{{localize 'STL.Import.Linked'}}"></i>{{/if}}
+                {{this.name}}
+              </span>
+              <span class="stl-queue-facets">{{this.facets}}</span>
+              <button type="button" class="stl-chip-remove" data-action="removeFile" data-index="{{this.index}}"
+                      data-tooltip="{{localize 'STL.Common.Remove'}}">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </li>
+          {{/each}}
+        </ul>
+      </fieldset>
+    {{/if}}
+
+    {{#if hasSuggestions}}
+      <fieldset class="stl-fieldset">
+        <legend>{{localize "STL.Import.NewValues"}}</legend>
+        <p class="hint">{{localize "STL.Import.NewValuesHint"}}</p>
+        <ul class="stl-suggestions">
+          {{#each suggestions}}
+            <li>
+              <button type="button"
+                      class="stl-chip{{#if this.accepted}} selected{{/if}}"
+                      data-action="toggleToken"
+                      data-token="{{this.token}}">{{this.token}}</button>
+              {{#if this.accepted}}
+                <select name="tokenFacet.{{this.token}}">
+                  {{#each ../facets}}
+                    <option value="{{this.id}}" {{#if (stl-eq this.id ../this.facetId)}}selected{{/if}}>
+                      {{this.label}}
+                    </option>
+                  {{/each}}
+                </select>
+              {{/if}}
+            </li>
+          {{/each}}
+        </ul>
+      </fieldset>
+    {{/if}}
+
   </div>
-
-  {{#if hasQueue}}
-    <fieldset class="stl-fieldset">
-      <legend>{{localize "STL.Import.Queued"}} ({{queue.length}})</legend>
-      <ul class="stl-queue">
-        {{#each queue}}
-          <li>
-            <span class="stl-queue-name">
-              {{#if this.fromDisk}}<i class="fas fa-link" data-tooltip="{{localize 'STL.Import.Linked'}}"></i>{{/if}}
-              {{this.name}}
-            </span>
-            <span class="stl-queue-facets">{{this.facets}}</span>
-            <button type="button" class="stl-chip-remove" data-action="removeFile" data-index="{{this.index}}"
-                    data-tooltip="{{localize 'STL.Common.Remove'}}">
-              <i class="fas fa-xmark"></i>
-            </button>
-          </li>
-        {{/each}}
-      </ul>
-    </fieldset>
-  {{/if}}
-
-  {{#if hasSuggestions}}
-    <fieldset class="stl-fieldset">
-      <legend>{{localize "STL.Import.NewValues"}}</legend>
-      <p class="hint">{{localize "STL.Import.NewValuesHint"}}</p>
-      <ul class="stl-suggestions">
-        {{#each suggestions}}
-          <li>
-            <button type="button"
-                    class="stl-chip{{#if this.accepted}} selected{{/if}}"
-                    data-action="toggleToken"
-                    data-token="{{this.token}}">{{this.token}}</button>
-            {{#if this.accepted}}
-              <select name="tokenFacet.{{this.token}}">
-                {{#each ../facets}}
-                  <option value="{{this.id}}" {{#if (stl-eq this.id ../this.facetId)}}selected{{/if}}>
-                    {{this.label}}
-                  </option>
-                {{/each}}
-              </select>
-            {{/if}}
-          </li>
-        {{/each}}
-      </ul>
-    </fieldset>
-  {{/if}}
 
   <footer class="stl-editor-actions">
     <button type="submit" class="stl-primary" {{#if busy}}disabled{{/if}}>

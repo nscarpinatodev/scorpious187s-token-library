@@ -20,7 +20,8 @@ import {
   facets as allFacets, facetUsage, draftOverlay, commit, ensureOverlayFacet,
 } from '../library/index.js';
 import { slugify } from '../storage/paths.js';
-import { libApi } from '../integrations/lib.js';
+import { confirmDialog } from '../integrations/lib.js';
+import { bindValueInputs, pendingValues } from './shared.js';
 import { log } from '../logger.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -104,6 +105,11 @@ export class TraitEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     };
   }
 
+  _onRender(context, options) {
+    super._onRender?.(context, options);
+    bindValueInputs(this.element);
+  }
+
   /** Pull typed-in ids and labels back into the draft before any re-render. */
   #syncFromForm() {
     const form = this.element;
@@ -153,19 +159,14 @@ export class TraitEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     const trait = this.traits[index];
     if (!trait) return;
 
-    const input = this.element.querySelector(`[data-new-value="${index}"]`);
     // One box, several values: pasting a comma-separated list is how a real
     // vocabulary gets entered, and typing them one at a time is a chore.
-    const added = String(input?.value ?? '')
-      .split(/[,\n]/)
-      .map(v => v.trim())
-      .filter(Boolean);
+    const added = pendingValues(this.element).get(index) ?? [];
     if (!added.length) return;
 
     for (const value of added) {
       if (!trait.values.includes(value)) trait.values.push(value);
     }
-    if (input) input.value = '';
     this.render();
   }
 
@@ -191,15 +192,21 @@ export class TraitEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   static async #onSubmit() {
     this.#syncFromForm();
 
+    // A value typed but never added still counts.
+    for (const [index, values] of pendingValues(this.element)) {
+      const trait = this.traits[index];
+      if (!trait || trait.id === FRAMING_FACET) continue;
+      for (const value of values) if (!trait.values.includes(value)) trait.values.push(value);
+    }
+
     const seen = new Set();
     const keep = [];
     for (const trait of this.traits) {
       const id = slugify(trait.id);
       if (!id) continue;               // An unnamed new row is simply discarded.
-      if (seen.has(id)) {
-        ui.notifications?.warn(game.i18n.format('STL.Traits.DuplicateId', { id }));
-        return;
-      }
+      // Thrown, not returned: Foundry only skips closeOnSubmit when the
+      // handler throws, so returning closed the editor and lost every edit.
+      if (seen.has(id)) throw new Error(game.i18n.format('STL.Traits.DuplicateId', { id }));
       seen.add(id);
       keep.push({ ...trait, id });
     }
@@ -218,14 +225,4 @@ export class TraitEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     ui.notifications?.info(game.i18n.format('STL.Traits.Saved', { count: keep.length }));
     await this.browser?.refresh();
   }
-}
-
-/** Confirmation dialog, preferring the lib's shared helper. */
-async function confirmDialog(title, content) {
-  const dialogs = libApi()?.utils?.dialogs;
-  if (dialogs?.confirm) return dialogs.confirm(title, content);
-  const result = await foundry.applications.api.DialogV2.confirm({
-    window: { title }, content, rejectClose: false,
-  });
-  return result === true;
 }
