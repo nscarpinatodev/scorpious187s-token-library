@@ -64,6 +64,8 @@ export function registerSettings() {
     },
   });
 
+  // Shown but disabled: only the "data" source is supported for now, and
+  // storage/paths.js ignores this value. See disableLibrarySource() below.
   game.settings.register(MODULE_ID, SETTINGS.LIBRARY_SOURCE, {
     name: t('LibrarySource'),
     hint: t('LibrarySourceHint'),
@@ -252,6 +254,26 @@ export function registerSettings() {
     type: Boolean,
     default: false,
   });
+
+  Hooks.on('renderSettingsConfig', disableLibrarySource);
+}
+
+/**
+ * Grey out the library source field in the settings window.
+ *
+ * Foundry has no "disabled" option for a registered setting, so the input is
+ * disabled after render. A disabled input is left out of the submitted form,
+ * so the stored value never changes; the box shows the default, which is what
+ * storage/paths.js actually uses.
+ * @param {Application} app
+ * @param {HTMLElement|JQuery} html v13+ passes an element; older shapes a jQuery.
+ */
+function disableLibrarySource(app, html) {
+  const root = html instanceof HTMLElement ? html : html?.[0];
+  const input = root?.querySelector(`[name="${MODULE_ID}.${SETTINGS.LIBRARY_SOURCE}"]`);
+  if (!input) return;
+  input.value = 'data';
+  input.disabled = true;
 }
 
 /** Convenience reader — `get(SETTINGS.RING_MODE)`. */

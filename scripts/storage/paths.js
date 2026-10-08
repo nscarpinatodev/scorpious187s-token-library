@@ -69,9 +69,16 @@ export function root() {
   return trimSlashes(get(SETTINGS.LIBRARY_PATH) || DEFAULT_ROOT);
 }
 
-/** The FilePicker source bucket the library lives in ("data", "forgevtt", …). */
+/**
+ * The FilePicker source bucket the library lives in.
+ *
+ * Always "data" for now. Other sources (S3, Forge) are not supported: the
+ * manifest is read back through a Foundry server route, which only resolves
+ * for "data". The LIBRARY_SOURCE setting is shown disabled and deliberately
+ * not read, so a world that set it before still lands on a working library.
+ */
 export function source() {
-  return get(SETTINGS.LIBRARY_SOURCE) || 'data';
+  return 'data';
 }
 
 /** True when the library is still using module persistent storage. */
